@@ -52,13 +52,14 @@ export const accounts = sqliteTable("accounts", {
     .$defaultFn(() => new Date()),
 });
 
-// ─── 목표 비중 (자산군별) ────────────────────────────────
+// ─── 목표 비중 (종목별) ─────────────────────────────────
 export const targetAllocations = sqliteTable("target_allocations", {
   id: text("id").primaryKey(),
   portfolioId: text("portfolio_id")
     .notNull()
     .references(() => portfolios.id, { onDelete: "cascade" }),
-  assetClass: text("asset_class").notNull(), // "domestic_equity", "foreign_equity", "bond", "alternative", "cash"
+  ticker: text("ticker").notNull(), // 종목 코드 (예: "069500") 또는 "__CASH__" (현금)
+  name: text("name").notNull(), // 종목명 (예: "KODEX 200") 또는 "현금"
   targetPercent: real("target_percent").notNull(), // 0~100
 });
 

@@ -308,6 +308,7 @@ export default function PortfolioDetailPage() {
           {/* 목표 비중 설정 */}
           <TargetAllocationForm
             portfolioId={params.id}
+            holdings={holdingDetails.map((h) => ({ ticker: h.ticker, name: h.name }))}
             onSaved={() => setRefreshKey((k) => k + 1)}
           />
 

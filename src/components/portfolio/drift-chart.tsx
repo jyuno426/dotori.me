@@ -9,31 +9,19 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
-  ReferenceLine,
 } from "recharts";
 
-const ASSET_CLASS_LABELS: Record<string, string> = {
-  domestic_equity: "국내 주식",
-  foreign_equity: "해외 주식",
-  bond: "채권",
-  alternative: "대안자산",
-  cash: "현금",
-};
+const CASH_TICKER = "__CASH__";
 
-const ASSET_CLASS_ORDER = ["domestic_equity", "foreign_equity", "bond", "alternative", "cash"];
-
-interface HoldingDetail {
-  ticker: string;
-  name: string;
-  shares: number;
-  price: number | null;
-  value: number;
-  assetClass?: string;
+interface ReturnsData {
+  holdingDetails: { ticker: string; name: string; value: number }[];
+  totalCash: number;
+  totalValue: number;
 }
 
 interface TargetAllocation {
-  assetClass: string;
+  ticker: string;
+  name: string;
   targetPercent: number;
 }
 
@@ -62,54 +50,68 @@ export function DriftChart({
         if (!r.ok) throw new Error();
         return r.json();
       }),
-      fetch(`/api/holdings?portfolioId=${portfolioId}`).then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      }),
       fetch(`/api/target-allocations?portfolioId=${portfolioId}`).then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
       }),
     ])
-      .then(([returns, holdings, targets]: [{ holdingDetails: HoldingDetail[] }, { assetClass: string; ticker: string }[], TargetAllocation[]]) => {
+      .then(([returns, targets]: [ReturnsData, TargetAllocation[]]) => {
         if (targets.length === 0) {
           setData([]);
           setLoading(false);
           return;
         }
 
-        // holdingDetails에 assetClass가 없으므로 holdings에서 매핑
-        const tickerAssetClass: Record<string, string> = {};
-        for (const h of holdings) tickerAssetClass[h.ticker] = h.assetClass;
+        const totalValue = returns.totalValue;
 
-        // 현재 비중 계산 (평가액 기반)
-        const classValues: Record<string, number> = {};
-        let totalValue = 0;
+        // 종목별 현재 비중 (평가액 기반)
+        const tickerValues: Record<string, { name: string; value: number }> = {};
         for (const hd of returns.holdingDetails) {
-          const ac = tickerAssetClass[hd.ticker] || "cash";
-          classValues[ac] = (classValues[ac] || 0) + hd.value;
-          totalValue += hd.value;
+          if (tickerValues[hd.ticker]) {
+            tickerValues[hd.ticker].value += hd.value;
+          } else {
+            tickerValues[hd.ticker] = { name: hd.name, value: hd.value };
+          }
         }
+        // 현금
+        tickerValues[CASH_TICKER] = { name: "현금", value: returns.totalCash };
 
         // 목표 비중 맵
         const targetMap: Record<string, number> = {};
-        for (const t of targets) targetMap[t.assetClass] = t.targetPercent;
+        const targetNames: Record<string, string> = {};
+        for (const t of targets) {
+          targetMap[t.ticker] = t.targetPercent;
+          targetNames[t.ticker] = t.name;
+        }
 
-        // 드리프트 계산
-        const items: DriftItem[] = ASSET_CLASS_ORDER
-          .filter((ac) => targetMap[ac] || classValues[ac])
-          .map((ac) => {
-            const current = totalValue > 0
-              ? ((classValues[ac] || 0) / totalValue) * 100
-              : 0;
-            const target = targetMap[ac] || 0;
-            return {
-              name: ASSET_CLASS_LABELS[ac] || ac,
-              current: Math.round(current * 10) / 10,
-              target: Math.round(target * 10) / 10,
-              drift: Math.round((current - target) * 10) / 10,
-            };
+        // 모든 ticker 합치기 (목표 또는 보유 중인 것)
+        const allTickers = new Set([
+          ...Object.keys(tickerValues),
+          ...Object.keys(targetMap),
+        ]);
+
+        const items: DriftItem[] = [];
+        for (const ticker of allTickers) {
+          const target = targetMap[ticker] || 0;
+          const currentValue = tickerValues[ticker]?.value || 0;
+          const current = totalValue > 0
+            ? (currentValue / totalValue) * 100
+            : 0;
+          const name = tickerValues[ticker]?.name || targetNames[ticker] || ticker;
+
+          // 목표도 없고 현재 비중도 0이면 스킵
+          if (target === 0 && current === 0) continue;
+
+          items.push({
+            name,
+            current: Math.round(current * 10) / 10,
+            target: Math.round(target * 10) / 10,
+            drift: Math.round((current - target) * 10) / 10,
           });
+        }
+
+        // 목표 비중 큰 순으로 정렬
+        items.sort((a, b) => b.target - a.target);
 
         setData(items);
       })
@@ -130,10 +132,12 @@ export function DriftChart({
 
   function driftColor(drift: number) {
     const abs = Math.abs(drift);
-    if (abs <= 3) return "#28a745"; // success green
-    if (abs <= 5) return "#ffc107"; // warning yellow
-    return "#dc3545"; // danger red
+    if (abs <= 3) return "#28a745";
+    if (abs <= 5) return "#ffc107";
+    return "#dc3545";
   }
+
+  const chartHeight = Math.max(data.length * 40, 120);
 
   return (
     <div className="rounded-xl border border-surface-dim bg-surface p-5 space-y-4">
@@ -141,12 +145,12 @@ export function DriftChart({
         현재 비중 vs 목표 비중
       </h2>
 
-      <div className="h-56">
+      <div style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 10, right: 20 }}>
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} fontSize={12} />
-            <YAxis type="category" dataKey="name" width={70} fontSize={12} />
+            <YAxis type="category" dataKey="name" width={90} fontSize={12} />
             <Tooltip
               formatter={(value, name) => [`${value}%`, name === "current" ? "현재" : "목표"]}
             />
@@ -157,10 +161,10 @@ export function DriftChart({
       </div>
 
       {/* 드리프트 요약 */}
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         {data.map((item) => (
           <div key={item.name} className="text-center p-2 rounded-lg bg-surface-dim/50">
-            <p className="text-xs text-foreground/60">{item.name}</p>
+            <p className="text-xs text-foreground/60 truncate">{item.name}</p>
             <p
               className="text-sm font-semibold"
               style={{ color: driftColor(item.drift) }}

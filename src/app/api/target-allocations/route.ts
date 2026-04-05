@@ -67,7 +67,8 @@ export async function POST(req: NextRequest) {
           .values({
             id: generateId(),
             portfolioId,
-            assetClass: alloc.assetClass,
+            ticker: alloc.ticker,
+            name: alloc.name,
             targetPercent: alloc.targetPercent,
           })
           .run();

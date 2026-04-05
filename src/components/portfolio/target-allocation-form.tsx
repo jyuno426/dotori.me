@@ -3,24 +3,26 @@
 import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 
-const ASSET_CLASSES = [
-  { key: "domestic_equity", label: "국내 주식" },
-  { key: "foreign_equity", label: "해외 주식" },
-  { key: "bond", label: "채권" },
-  { key: "alternative", label: "대안자산" },
-  { key: "cash", label: "현금" },
-];
+const CASH_TICKER = "__CASH__";
+
+interface HoldingItem {
+  ticker: string;
+  name: string;
+}
 
 interface TargetAllocation {
-  assetClass: string;
+  ticker: string;
+  name: string;
   targetPercent: number;
 }
 
 export function TargetAllocationForm({
   portfolioId,
+  holdings,
   onSaved,
 }: {
   portfolioId: string;
+  holdings: HoldingItem[];
   onSaved?: () => void;
 }) {
   const [values, setValues] = useState<Record<string, number>>({});
@@ -28,6 +30,12 @@ export function TargetAllocationForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // 중복 제거된 종목 목록 + 현금
+  const uniqueHoldings = holdings.reduce((acc, h) => {
+    if (!acc.find((a) => a.ticker === h.ticker)) acc.push(h);
+    return acc;
+  }, [] as HoldingItem[]);
 
   useEffect(() => {
     fetch(`/api/target-allocations?portfolioId=${portfolioId}`)
@@ -37,7 +45,7 @@ export function TargetAllocationForm({
       })
       .then((rows: TargetAllocation[]) => {
         const map: Record<string, number> = {};
-        for (const r of rows) map[r.assetClass] = r.targetPercent;
+        for (const r of rows) map[r.ticker] = r.targetPercent;
         setValues(map);
       })
       .catch(() => setError("목표 비중 데이터를 불러오는데 실패했습니다."))
@@ -52,10 +60,18 @@ export function TargetAllocationForm({
     setError("");
     setSuccess(false);
 
-    const allocations = ASSET_CLASSES.map((ac) => ({
-      assetClass: ac.key,
-      targetPercent: values[ac.key] || 0,
-    }));
+    const allocations = [
+      ...uniqueHoldings.map((h) => ({
+        ticker: h.ticker,
+        name: h.name,
+        targetPercent: values[h.ticker] || 0,
+      })),
+      {
+        ticker: CASH_TICKER,
+        name: "현금",
+        targetPercent: values[CASH_TICKER] || 0,
+      },
+    ];
 
     const res = await fetch("/api/target-allocations", {
       method: "POST",
@@ -76,35 +92,49 @@ export function TargetAllocationForm({
 
   if (loading) return <div className="animate-pulse text-foreground/60 text-sm">로딩 중...</div>;
 
+  if (uniqueHoldings.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-surface-dim bg-surface p-5 text-center text-foreground/60 text-sm">
+        종목을 먼저 추가하면 목표 비중을 설정할 수 있습니다.
+      </div>
+    );
+  }
+
+  const allItems = [...uniqueHoldings, { ticker: CASH_TICKER, name: "현금" }];
+
   return (
     <div className="rounded-xl border border-surface-dim bg-surface p-5 space-y-4">
       <h2 className="text-sm font-semibold text-foreground/70 flex items-center gap-1.5">
         <Target size={14} />
-        목표 비중 설정
+        종목별 목표 비중
       </h2>
 
       <div className="space-y-2">
-        {ASSET_CLASSES.map((ac) => (
-          <div key={ac.key} className="flex items-center gap-3">
-            <label className="text-sm w-24 shrink-0">{ac.label}</label>
+        {allItems.map((item) => (
+          <div key={item.ticker} className="flex items-center gap-3">
+            <div className="w-32 shrink-0">
+              <p className="text-sm font-medium truncate">{item.name}</p>
+              {item.ticker !== CASH_TICKER && (
+                <p className="text-xs text-foreground/60">{item.ticker}</p>
+              )}
+            </div>
             <input
               type="number"
               min="0"
               max="100"
               step="0.1"
-              value={values[ac.key] ?? ""}
+              value={values[item.ticker] ?? ""}
               onChange={(e) =>
-                setValues((v) => ({ ...v, [ac.key]: Number(e.target.value) || 0 }))
+                setValues((v) => ({ ...v, [item.ticker]: Number(e.target.value) || 0 }))
               }
               placeholder="0"
               className="w-24 rounded-lg border border-surface-dim px-3 py-1.5 text-sm text-right focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <span className="text-sm text-foreground/60">%</span>
-            {/* 비중 바 */}
             <div className="flex-1 h-2 bg-surface-dim rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all"
-                style={{ width: `${Math.min(values[ac.key] || 0, 100)}%` }}
+                style={{ width: `${Math.min(values[item.ticker] || 0, 100)}%` }}
               />
             </div>
           </div>
