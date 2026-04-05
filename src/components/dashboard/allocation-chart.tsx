@@ -26,24 +26,39 @@ interface Props {
 
 export function AllocationChart({ portfolioIds }: Props) {
   const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (portfolioIds.length === 0) return;
 
     Promise.all(
       portfolioIds.map((id) =>
-        fetch(`/api/holdings?portfolioId=${id}`).then((r) => r.json())
+        fetch(`/api/holdings?portfolioId=${id}`).then((r) => {
+          if (!r.ok) throw new Error();
+          return r.json();
+        })
       )
-    ).then((results) => {
-      setHoldings(results.flat());
-    });
+    )
+      .then((results) => setHoldings(results.flat()))
+      .catch(() => setError(true));
   }, [portfolioIds]);
 
-  if (holdings.length === 0) {
-    return null;
+  if (error) {
+    return (
+      <div className="rounded-xl border border-danger/20 bg-danger/5 p-5 text-center text-danger text-sm">
+        차트 데이터를 불러오는데 실패했습니다.
+      </div>
+    );
   }
 
-  // 자산군별 종목 수 집계 (시세 데이터 없이 종목 수 기준으로 표시)
+  if (holdings.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-surface-dim bg-surface p-5 text-center text-foreground/60 text-sm">
+        종목을 등록하면 자산 배분 차트가 표시됩니다.
+      </div>
+    );
+  }
+
   const assetClassCounts = holdings.reduce(
     (acc, h) => {
       acc[h.assetClass] = (acc[h.assetClass] || 0) + 1;
@@ -59,9 +74,9 @@ export function AllocationChart({ portfolioIds }: Props) {
 
   return (
     <div className="rounded-xl border border-surface-dim bg-surface p-5">
-      <h3 className="text-sm font-semibold text-foreground/60 mb-4">
+      <h2 className="text-sm font-semibold text-foreground/70 mb-4">
         자산군별 종목 분포
-      </h3>
+      </h2>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>

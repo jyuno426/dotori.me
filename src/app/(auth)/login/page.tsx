@@ -47,22 +47,22 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">이메일</label>
+            <label className="block text-sm font-medium mb-1">이메일 <span className="text-danger">*</span></label>
             <input
               name="email"
               type="email"
               required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">비밀번호</label>
+            <label className="block text-sm font-medium mb-1">비밀번호 <span className="text-danger">*</span></label>
             <input
               name="password"
               type="password"
               required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="••••••••"
             />
           </div>

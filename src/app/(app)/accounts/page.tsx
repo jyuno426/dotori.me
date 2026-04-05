@@ -42,7 +42,7 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">계좌 관리</h2>
+        <h1 className="text-xl font-bold">계좌 관리</h1>
         <Link
           href="/accounts/new"
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
@@ -53,10 +53,10 @@ export default function AccountsPage() {
       </div>
 
       {loading ? (
-        <div className="animate-pulse text-foreground/40">로딩 중...</div>
+        <div className="animate-pulse text-foreground/60">로딩 중...</div>
       ) : accounts.length === 0 ? (
-        <div className="text-center py-16 text-foreground/50">
-          <Building2 size={40} className="mx-auto mb-3 text-foreground/20" />
+        <div className="text-center py-16 text-foreground/60">
+          <Building2 size={40} className="mx-auto mb-3 text-foreground/60" />
           <p>등록된 계좌가 없습니다.</p>
           <p className="text-sm mt-1">먼저 포트폴리오를 만들고 계좌를 추가해주세요.</p>
         </div>
@@ -71,7 +71,7 @@ export default function AccountsPage() {
                 <div>
                   <p className="font-semibold">{acc.name}</p>
                   {acc.broker && (
-                    <p className="text-xs text-foreground/40 mt-0.5">{acc.broker}</p>
+                    <p className="text-xs text-foreground/60 mt-0.5">{acc.broker}</p>
                   )}
                 </div>
               </div>
@@ -84,7 +84,7 @@ export default function AccountsPage() {
                 </span>
               </div>
               {acc.portfolioName && (
-                <p className="text-xs text-foreground/40 mt-2">
+                <p className="text-xs text-foreground/60 mt-2">
                   포트폴리오: {acc.portfolioName}
                 </p>
               )}

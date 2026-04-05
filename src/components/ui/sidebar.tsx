@@ -11,7 +11,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -26,12 +26,21 @@ export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && open) setOpen(false);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
   return (
     <>
       {/* 모바일 토글 */}
       <button
-        className="fixed top-4 left-4 z-50 md:hidden rounded-lg bg-surface p-2 shadow"
+        className="fixed top-4 left-4 z-50 md:hidden rounded-lg bg-surface min-w-[44px] min-h-[44px] flex items-center justify-center shadow"
         onClick={() => setOpen(!open)}
+        aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
       >
         {open ? <X size={20} /> : <Menu size={20} />}
       </button>
@@ -52,8 +61,8 @@ export function Sidebar() {
         )}
       >
         {/* 로고 */}
-        <div className="flex items-center gap-2 px-5 py-5 border-b border-surface-dim">
-          <span className="text-2xl">🌰</span>
+        <div className="flex items-center gap-2 px-4 py-4 border-b border-surface-dim">
+          <span className="text-2xl" role="img" aria-label="도토리">🌰</span>
           <span className="font-bold text-lg text-primary-dark">도토리</span>
         </div>
 
@@ -81,7 +90,7 @@ export function Sidebar() {
         </nav>
 
         {/* 하단 */}
-        <div className="px-5 py-4 border-t border-surface-dim text-xs text-foreground/50">
+        <div className="px-4 py-4 border-t border-surface-dim text-xs text-foreground/60">
           한 알씩 모아, 단단한 내일로
         </div>
       </aside>

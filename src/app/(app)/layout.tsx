@@ -16,7 +16,7 @@ export default async function AppLayout({
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header user={session} />
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+        <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6 overflow-auto">{children}</main>
       </div>
     </div>
   );

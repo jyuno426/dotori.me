@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { users } from "./db/schema";
-import { eq } from "drizzle-orm";
+import { users, sessions } from "./db/schema";
+import { eq, and, gt } from "drizzle-orm";
 import { generateId } from "./utils";
 import { cookies } from "next/headers";
 import crypto from "crypto";
@@ -41,14 +41,14 @@ export async function signIn(email: string, password: string) {
   return { id: user.id, email: user.email, name: user.name };
 }
 
-// 간단한 세션 관리 (쿠키 기반)
+// 세션 관리 (DB 기반 + 쿠키)
 const SESSION_COOKIE = "dotori_session";
-const sessions = new Map<string, { userId: string; expiresAt: number }>();
 
 export async function createSession(userId: string) {
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7일
-  sessions.set(token, { userId, expiresAt });
+
+  db.insert(sessions).values({ token, userId, expiresAt }).run();
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
@@ -67,9 +67,14 @@ export async function getSession() {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const session = sessions.get(token);
-  if (!session || session.expiresAt < Date.now()) {
-    sessions.delete(token);
+  const session = db
+    .select()
+    .from(sessions)
+    .where(and(eq(sessions.token, token), gt(sessions.expiresAt, Date.now())))
+    .get();
+
+  if (!session) {
+    db.delete(sessions).where(eq(sessions.token, token)).run();
     return null;
   }
 
@@ -83,7 +88,7 @@ export async function destroySession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (token) {
-    sessions.delete(token);
+    db.delete(sessions).where(eq(sessions.token, token)).run();
     cookieStore.delete(SESSION_COOKIE);
   }
 }

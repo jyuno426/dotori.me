@@ -43,40 +43,63 @@ export default function PortfolioDetailPage() {
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [showAddHolding, setShowAddHolding] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/portfolios")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then((pfs: Portfolio[]) => {
         const pf = pfs.find((p) => p.id === params.id);
         setPortfolio(pf ?? null);
-      });
+      })
+      .catch(() => setError("포트폴리오 데이터를 불러오는데 실패했습니다."));
 
     fetch(`/api/accounts?portfolioId=${params.id}`)
-      .then((r) => r.json())
-      .then(setAccounts);
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then(setAccounts)
+      .catch(() => setError("계좌 데이터를 불러오는데 실패했습니다."));
   }, [params.id]);
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <p className="text-danger text-sm">{error}</p>
+        <button
+          onClick={() => location.reload()}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
+        >
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
   if (!portfolio) {
-    return <div className="animate-pulse text-foreground/40">로딩 중...</div>;
+    return <div className="animate-pulse text-foreground/60">로딩 중...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold">{portfolio.name}</h2>
+        <h1 className="text-xl font-bold">{portfolio.name}</h1>
         {portfolio.description && (
-          <p className="text-sm text-foreground/50 mt-1">{portfolio.description}</p>
+          <p className="text-sm text-foreground/60 mt-1">{portfolio.description}</p>
         )}
       </div>
 
       {/* 계좌 목록 */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground/60 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold text-foreground/70 flex items-center gap-1.5">
             <Building2 size={14} />
             계좌 ({accounts.length}개)
-          </h3>
+          </h2>
           <Link
             href={`/accounts/new?portfolioId=${params.id}`}
             className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
@@ -87,7 +110,7 @@ export default function PortfolioDetailPage() {
         </div>
 
         {accounts.length === 0 ? (
-          <div className="text-center py-8 text-foreground/50 text-sm rounded-xl border border-dashed border-surface-dim">
+          <div className="text-center py-8 text-foreground/60 text-sm rounded-xl border border-dashed border-surface-dim">
             아직 계좌가 없습니다. 계좌를 추가해주세요.
           </div>
         ) : (
@@ -115,7 +138,7 @@ export default function PortfolioDetailPage() {
                   </span>
                 </div>
                 {acc.broker && (
-                  <p className="text-xs text-foreground/40 mt-1">{acc.broker}</p>
+                  <p className="text-xs text-foreground/60 mt-1">{acc.broker}</p>
                 )}
               </button>
             ))}
@@ -127,9 +150,9 @@ export default function PortfolioDetailPage() {
       {selectedAccount && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground/60">
+            <h2 className="text-sm font-semibold text-foreground/70">
               보유 종목 — {accounts.find((a) => a.id === selectedAccount)?.name}
-            </h3>
+            </h2>
             <button
               onClick={() => setShowAddHolding(!showAddHolding)}
               className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
@@ -159,9 +182,9 @@ export default function PortfolioDetailPage() {
       {/* 전체 포트폴리오 보유 종목 */}
       {!selectedAccount && accounts.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground/60">
+          <h2 className="text-sm font-semibold text-foreground/70">
             전체 보유 종목
-          </h3>
+          </h2>
           <HoldingsTable
             portfolioId={params.id}
             refreshKey={refreshKey}

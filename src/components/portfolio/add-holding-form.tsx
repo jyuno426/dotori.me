@@ -45,29 +45,29 @@ export function AddHoldingForm({ accountId, onAdded }: Props) {
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="block text-xs font-medium mb-1">종목 코드</label>
+          <label className="block text-xs font-medium mb-1">종목 코드 <span className="text-danger">*</span></label>
           <input
             name="ticker"
             required
-            className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
             placeholder="예: 069500"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1">종목명</label>
+          <label className="block text-xs font-medium mb-1">종목명 <span className="text-danger">*</span></label>
           <input
             name="name"
             required
-            className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
             placeholder="예: KODEX 200"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1">자산군</label>
+          <label className="block text-xs font-medium mb-1">자산군 <span className="text-danger">*</span></label>
           <select
             name="assetClass"
             required
-            className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
             <option value="domestic_equity">국내 주식</option>
             <option value="foreign_equity">해외 주식</option>
@@ -77,14 +77,14 @@ export function AddHoldingForm({ accountId, onAdded }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium mb-1">보유 수량</label>
+          <label className="block text-xs font-medium mb-1">보유 수량 <span className="text-danger">*</span></label>
           <input
             name="shares"
             type="number"
             step="any"
             min="0"
             required
-            className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
             placeholder="예: 100"
           />
         </div>

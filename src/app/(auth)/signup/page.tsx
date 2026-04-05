@@ -57,42 +57,42 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">이름</label>
+            <label className="block text-sm font-medium mb-1">이름 <span className="text-foreground/50">(선택)</span></label>
             <input
               name="name"
               type="text"
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="홍길동"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">이메일</label>
+            <label className="block text-sm font-medium mb-1">이메일 <span className="text-danger">*</span></label>
             <input
               name="email"
               type="email"
               required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">비밀번호</label>
+            <label className="block text-sm font-medium mb-1">비밀번호 <span className="text-danger">*</span></label>
             <input
               name="password"
               type="password"
               required
               minLength={8}
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="8자 이상"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">비밀번호 확인</label>
+            <label className="block text-sm font-medium mb-1">비밀번호 확인 <span className="text-danger">*</span></label>
             <input
               name="confirm"
               type="password"
               required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="비밀번호 재입력"
             />
           </div>

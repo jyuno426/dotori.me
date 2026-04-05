@@ -3,6 +3,8 @@
 :root {
   --background: #fafaf8;
   --foreground: #1a1a1a;
+  --surface: #ffffff;
+  --surface-dim: #f0eeeb;
 }
 
 @theme inline {
@@ -13,8 +15,8 @@
   --color-primary-dark: #3a5c31;
   --color-accent: #d4a574;
   --color-accent-light: #e8c9a0;
-  --color-surface: #ffffff;
-  --color-surface-dim: #f0eeeb;
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
   --color-danger: #dc3545;
   --color-success: #28a745;
   --color-warning: #ffc107;
@@ -26,10 +28,21 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --surface: #1a1a1a;
+    --surface-dim: #2a2a2a;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
 }

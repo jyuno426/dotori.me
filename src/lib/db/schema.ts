@@ -104,6 +104,15 @@ export const cashFlows = sqliteTable("cash_flows", {
     .$defaultFn(() => new Date()),
 });
 
+// ─── 세션 ──────────────────────────────────────────────
+export const sessions = sqliteTable("sessions", {
+  token: text("token").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: integer("expires_at").notNull(), // unix ms
+});
+
 // ─── 종가 데이터 (시세 캐시) ────────────────────────────
 export const prices = sqliteTable("prices", {
   id: text("id").primaryKey(),

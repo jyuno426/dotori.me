@@ -15,18 +15,37 @@ interface Portfolio {
 export default function DashboardPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/portfolios")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then(setPortfolios)
+      .catch(() => setError("데이터를 불러오는데 실패했습니다."))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-foreground/40">로딩 중...</div>
+        <div className="animate-pulse text-foreground/60">로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <p className="text-danger text-sm">{error}</p>
+        <button
+          onClick={() => location.reload()}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
+        >
+          다시 시도
+        </button>
       </div>
     );
   }
@@ -34,8 +53,8 @@ export default function DashboardPage() {
   if (portfolios.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <div className="text-6xl">🌰</div>
-        <h2 className="text-xl font-semibold">포트폴리오를 만들어보세요</h2>
+        <div className="text-6xl" role="img" aria-label="도토리">🌰</div>
+        <h1 className="text-xl font-semibold">포트폴리오를 만들어보세요</h1>
         <p className="text-foreground/60 text-sm text-center max-w-sm">
           다계좌를 하나의 포트폴리오로 통합하여 비중 분석과 리밸런싱을 시작하세요.
         </p>
@@ -53,7 +72,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">대시보드</h2>
+        <h1 className="text-xl font-bold">대시보드</h1>
         <Link
           href="/portfolios/new"
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
@@ -77,22 +96,22 @@ export default function DashboardPage() {
             <TrendingUp size={16} />
             총 평가액
           </div>
-          <p className="mt-2 text-2xl font-bold text-foreground/40">—</p>
-          <p className="text-xs text-foreground/40 mt-1">종목 등록 후 확인 가능</p>
+          <p className="mt-2 text-2xl font-bold text-foreground/50">—</p>
+          <p className="text-xs text-foreground/50 mt-1">종목 등록 후 확인 가능</p>
         </div>
         <div className="rounded-xl border border-surface-dim bg-surface p-5">
           <div className="flex items-center gap-2 text-foreground/60 text-sm">
             <PieChart size={16} />
             자산배분
           </div>
-          <p className="mt-2 text-2xl font-bold text-foreground/40">—</p>
-          <p className="text-xs text-foreground/40 mt-1">종목 등록 후 확인 가능</p>
+          <p className="mt-2 text-2xl font-bold text-foreground/50">—</p>
+          <p className="text-xs text-foreground/50 mt-1">종목 등록 후 확인 가능</p>
         </div>
       </div>
 
       {/* 포트폴리오 목록 */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground/60">내 포트폴리오</h3>
+        <h2 className="text-sm font-semibold text-foreground/70">내 포트폴리오</h2>
         {portfolios.map((pf) => (
           <PortfolioSummaryCard key={pf.id} portfolio={pf} />
         ))}
