@@ -5,6 +5,7 @@ import { Plus, Briefcase, TrendingUp, PieChart } from "lucide-react";
 import Link from "next/link";
 import { AllocationChart } from "@/components/dashboard/allocation-chart";
 import { PortfolioSummaryCard } from "@/components/dashboard/portfolio-summary-card";
+import { formatKRW, formatPercent } from "@/lib/utils";
 
 interface Portfolio {
   id: string;
@@ -12,8 +13,15 @@ interface Portfolio {
   description: string | null;
 }
 
+interface ReturnData {
+  totalValue: number;
+  profitLoss: number;
+  returnRate: number;
+}
+
 export default function DashboardPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [totalReturn, setTotalReturn] = useState<ReturnData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -23,7 +31,28 @@ export default function DashboardPage() {
         if (!r.ok) throw new Error();
         return r.json();
       })
-      .then(setPortfolios)
+      .then((pfs: Portfolio[]) => {
+        setPortfolios(pfs);
+        // 전체 수익률 집계
+        if (pfs.length > 0) {
+          Promise.all(
+            pfs.map((p) =>
+              fetch(`/api/returns?portfolioId=${p.id}`)
+                .then((r) => (r.ok ? r.json() : null))
+                .catch(() => null)
+            )
+          ).then((results) => {
+            const valid = results.filter(Boolean) as ReturnData[];
+            if (valid.length > 0) {
+              const totalValue = valid.reduce((s, r) => s + r.totalValue, 0);
+              const profitLoss = valid.reduce((s, r) => s + r.profitLoss, 0);
+              const netInvested = totalValue - profitLoss;
+              const returnRate = netInvested > 0 ? (profitLoss / netInvested) * 100 : 0;
+              setTotalReturn({ totalValue, profitLoss, returnRate });
+            }
+          });
+        }
+      })
       .catch(() => setError("데이터를 불러오는데 실패했습니다."))
       .finally(() => setLoading(false));
   }, []);
@@ -96,16 +125,30 @@ export default function DashboardPage() {
             <TrendingUp size={16} />
             총 평가액
           </div>
-          <p className="mt-2 text-2xl font-bold text-foreground/50">—</p>
-          <p className="text-xs text-foreground/50 mt-1">종목 등록 후 확인 가능</p>
+          {totalReturn && totalReturn.totalValue > 0 ? (
+            <p className="mt-2 text-2xl font-bold">{formatKRW(totalReturn.totalValue)}</p>
+          ) : (
+            <>
+              <p className="mt-2 text-2xl font-bold text-foreground/50">—</p>
+              <p className="text-xs text-foreground/50 mt-1">종목·현재가 등록 후 확인 가능</p>
+            </>
+          )}
         </div>
         <div className="rounded-xl border border-surface-dim bg-surface p-5">
           <div className="flex items-center gap-2 text-foreground/60 text-sm">
             <PieChart size={16} />
-            자산배분
+            수익률
           </div>
-          <p className="mt-2 text-2xl font-bold text-foreground/50">—</p>
-          <p className="text-xs text-foreground/50 mt-1">종목 등록 후 확인 가능</p>
+          {totalReturn && totalReturn.totalValue > 0 ? (
+            <p className={`mt-2 text-2xl font-bold ${totalReturn.profitLoss >= 0 ? "text-success" : "text-danger"}`}>
+              {formatPercent(totalReturn.returnRate)}
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 text-2xl font-bold text-foreground/50">—</p>
+              <p className="text-xs text-foreground/50 mt-1">입출금·현재가 등록 후 확인 가능</p>
+            </>
+          )}
         </div>
       </div>
 
