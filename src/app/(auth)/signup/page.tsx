@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AcornIcon } from "@/components/ui/acorn-icon";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <span className="text-4xl">🌰</span>
+          <AcornIcon className="w-12 h-12 mx-auto" />
           <h1 className="mt-2 text-2xl font-bold text-primary-dark">회원가입</h1>
           <p className="mt-1 text-sm text-foreground/60">
             도토리와 함께 투자를 시작하세요

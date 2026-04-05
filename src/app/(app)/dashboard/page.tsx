@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AllocationChart } from "@/components/dashboard/allocation-chart";
 import { PortfolioSummaryCard } from "@/components/dashboard/portfolio-summary-card";
 import { formatKRW, formatPercent } from "@/lib/utils";
+import { AcornIcon } from "@/components/ui/acorn-icon";
 
 interface Portfolio {
   id: string;
@@ -82,7 +83,7 @@ export default function DashboardPage() {
   if (portfolios.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <div className="text-6xl" role="img" aria-label="도토리">🌰</div>
+        <AcornIcon className="w-16 h-16" />
         <h1 className="text-xl font-semibold">포트폴리오를 만들어보세요</h1>
         <p className="text-foreground/60 text-sm text-center max-w-sm">
           다계좌를 하나의 포트폴리오로 통합하여 비중 분석과 리밸런싱을 시작하세요.
