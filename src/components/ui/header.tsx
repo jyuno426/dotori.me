@@ -1,13 +1,14 @@
 "use client";
 
-import { LogOut, User } from "lucide-react";
+import { LogOut, Menu, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   user: { email: string; name: string | null } | null;
+  onMenuToggle?: () => void;
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, onMenuToggle }: HeaderProps) {
   const router = useRouter();
 
   async function handleLogout() {
@@ -18,7 +19,14 @@ export function Header({ user }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between h-14 px-4 bg-surface border-b border-surface-dim">
-      <div className="md:hidden w-[44px]" /> {/* 모바일 메뉴 버튼 공간 */}
+      {/* 모바일 메뉴 버튼 */}
+      <button
+        className="md:hidden rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-surface-dim transition-colors"
+        onClick={onMenuToggle}
+        aria-label="메뉴 열기"
+      >
+        <Menu size={20} />
+      </button>
       <span className="text-sm font-semibold text-foreground/80 hidden md:block">
         도토리
       </span>
