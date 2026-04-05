@@ -78,6 +78,7 @@ export function CashFlowSection({
   }
 
   async function handleDelete(id: string) {
+    if (!confirm("이 입출금 기록을 삭제하시겠습니까?")) return;
     await fetch(`/api/cash-flows?id=${id}`, { method: "DELETE" });
     setLocalRefresh((k) => k + 1);
   }

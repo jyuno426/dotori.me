@@ -14,6 +14,15 @@ export async function GET(req: NextRequest) {
   const portfolioId = req.nextUrl.searchParams.get("portfolioId");
 
   if (accountId) {
+    // 소유권 확인
+    const account = db
+      .select()
+      .from(accounts)
+      .innerJoin(portfolios, eq(accounts.portfolioId, portfolios.id))
+      .where(and(eq(accounts.id, accountId), eq(portfolios.userId, session.userId)))
+      .get();
+    if (!account) return NextResponse.json({ error: "계좌를 찾을 수 없습니다." }, { status: 404 });
+
     // 최신 잔액 1건
     const row = db
       .select()

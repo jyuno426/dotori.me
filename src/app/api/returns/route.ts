@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     .all();
 
   let holdingsValue = 0;
-  const missingPrices: string[] = [];
+  const missingPricesSet = new Set<string>();
   const holdingDetails: {
     ticker: string;
     name: string;
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
     const value = price != null ? holding.shares * price : 0;
     holdingsValue += value;
 
-    if (price == null) missingPrices.push(holding.ticker);
+    if (price == null) missingPricesSet.add(holding.ticker);
 
     holdingDetails.push({
       ticker: holding.ticker,
@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
     netInvested,
     profitLoss,
     returnRate: Math.round(returnRate * 100) / 100,
-    missingPrices,
+    missingPrices: [...missingPricesSet],
     holdingDetails,
   });
 }

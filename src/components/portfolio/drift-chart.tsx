@@ -23,9 +23,13 @@ const ASSET_CLASS_LABELS: Record<string, string> = {
 
 const ASSET_CLASS_ORDER = ["domestic_equity", "foreign_equity", "bond", "alternative", "cash"];
 
-interface Holding {
-  assetClass: string;
+interface HoldingDetail {
+  ticker: string;
+  name: string;
   shares: number;
+  price: number | null;
+  value: number;
+  assetClass?: string;
 }
 
 interface TargetAllocation {
@@ -54,6 +58,10 @@ export function DriftChart({
   useEffect(() => {
     setLoading(true);
     Promise.all([
+      fetch(`/api/returns?portfolioId=${portfolioId}`).then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      }),
       fetch(`/api/holdings?portfolioId=${portfolioId}`).then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
@@ -63,18 +71,24 @@ export function DriftChart({
         return r.json();
       }),
     ])
-      .then(([holdings, targets]: [Holding[], TargetAllocation[]]) => {
+      .then(([returns, holdings, targets]: [{ holdingDetails: HoldingDetail[] }, { assetClass: string; ticker: string }[], TargetAllocation[]]) => {
         if (targets.length === 0) {
           setData([]);
           setLoading(false);
           return;
         }
 
-        // 현재 비중 계산 (종목 수 기반)
-        const totalHoldings = holdings.length;
-        const classCounts: Record<string, number> = {};
-        for (const h of holdings) {
-          classCounts[h.assetClass] = (classCounts[h.assetClass] || 0) + 1;
+        // holdingDetails에 assetClass가 없으므로 holdings에서 매핑
+        const tickerAssetClass: Record<string, string> = {};
+        for (const h of holdings) tickerAssetClass[h.ticker] = h.assetClass;
+
+        // 현재 비중 계산 (평가액 기반)
+        const classValues: Record<string, number> = {};
+        let totalValue = 0;
+        for (const hd of returns.holdingDetails) {
+          const ac = tickerAssetClass[hd.ticker] || "cash";
+          classValues[ac] = (classValues[ac] || 0) + hd.value;
+          totalValue += hd.value;
         }
 
         // 목표 비중 맵
@@ -83,10 +97,10 @@ export function DriftChart({
 
         // 드리프트 계산
         const items: DriftItem[] = ASSET_CLASS_ORDER
-          .filter((ac) => targetMap[ac] || classCounts[ac])
+          .filter((ac) => targetMap[ac] || classValues[ac])
           .map((ac) => {
-            const current = totalHoldings > 0
-              ? ((classCounts[ac] || 0) / totalHoldings) * 100
+            const current = totalValue > 0
+              ? ((classValues[ac] || 0) / totalValue) * 100
               : 0;
             const target = targetMap[ac] || 0;
             return {

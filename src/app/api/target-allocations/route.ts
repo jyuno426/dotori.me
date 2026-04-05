@@ -55,29 +55,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "목표 비중 합계가 100%가 되어야 합니다." }, { status: 400 });
   }
 
-  // 기존 삭제 후 새로 삽입
-  db.delete(targetAllocations)
-    .where(eq(targetAllocations.portfolioId, portfolioId))
-    .run();
+  // 트랜잭션으로 기존 삭제 + 새로 삽입 (원자적 처리)
+  const rows = db.transaction(() => {
+    db.delete(targetAllocations)
+      .where(eq(targetAllocations.portfolioId, portfolioId))
+      .run();
 
-  for (const alloc of allocations) {
-    if (alloc.targetPercent > 0) {
-      db.insert(targetAllocations)
-        .values({
-          id: generateId(),
-          portfolioId,
-          assetClass: alloc.assetClass,
-          targetPercent: alloc.targetPercent,
-        })
-        .run();
+    for (const alloc of allocations) {
+      if (alloc.targetPercent > 0) {
+        db.insert(targetAllocations)
+          .values({
+            id: generateId(),
+            portfolioId,
+            assetClass: alloc.assetClass,
+            targetPercent: alloc.targetPercent,
+          })
+          .run();
+      }
     }
-  }
 
-  const rows = db
-    .select()
-    .from(targetAllocations)
-    .where(eq(targetAllocations.portfolioId, portfolioId))
-    .all();
+    return db
+      .select()
+      .from(targetAllocations)
+      .where(eq(targetAllocations.portfolioId, portfolioId))
+      .all();
+  });
 
   return NextResponse.json(rows);
 }

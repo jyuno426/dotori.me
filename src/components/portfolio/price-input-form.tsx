@@ -91,7 +91,7 @@ export function PriceInputForm({
             <input
               type="number"
               min="0"
-              step="1"
+              step="any"
               value={priceValues[h.ticker] ?? ""}
               onChange={(e) =>
                 setPriceValues((v) => ({ ...v, [h.ticker]: e.target.value }))

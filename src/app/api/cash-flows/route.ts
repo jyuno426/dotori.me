@@ -106,6 +106,16 @@ export async function DELETE(req: NextRequest) {
   const flowId = req.nextUrl.searchParams.get("id");
   if (!flowId) return NextResponse.json({ error: "id가 필요합니다." }, { status: 400 });
 
+  // 소유권 확인: cashFlow → account → portfolio → userId
+  const flow = db
+    .select({ cashFlow: cashFlows, portfolio: portfolios })
+    .from(cashFlows)
+    .innerJoin(accounts, eq(cashFlows.accountId, accounts.id))
+    .innerJoin(portfolios, eq(accounts.portfolioId, portfolios.id))
+    .where(and(eq(cashFlows.id, flowId), eq(portfolios.userId, session.userId)))
+    .get();
+  if (!flow) return NextResponse.json({ error: "입출금 기록을 찾을 수 없습니다." }, { status: 404 });
+
   db.delete(cashFlows).where(eq(cashFlows.id, flowId)).run();
   return NextResponse.json({ ok: true });
 }
