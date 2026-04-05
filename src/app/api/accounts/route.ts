@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { portfolioId, name, broker, accountType, taxType, owner } = await req.json();
+  const { portfolioId, name, broker, accountType, owner } = await req.json();
 
   // 포트폴리오 소유권 확인
   const pf = db
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     .get();
   if (!pf) return NextResponse.json({ error: "포트폴리오를 찾을 수 없습니다." }, { status: 404 });
 
-  if (!name || !accountType || !taxType) {
+  if (!name || !accountType) {
     return NextResponse.json({ error: "필수 항목을 입력해주세요." }, { status: 400 });
   }
 
@@ -65,7 +65,6 @@ export async function POST(req: NextRequest) {
       name,
       broker: broker ?? null,
       accountType,
-      taxType,
       owner: owner ?? null,
     })
     .run();

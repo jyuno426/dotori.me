@@ -28,14 +28,7 @@ export const portfolios = sqliteTable("portfolios", {
 });
 
 // ─── 계좌 ───────────────────────────────────────────────
-// 세금 유형: tax_deferred(과세이연 IRP/연금저축), tax_free(비과세 ISA),
-//           separate_tax(분리과세), taxable(일반과세 위탁)
 export type AccountType = "irp" | "pension" | "isa" | "brokerage" | "cma";
-export type TaxType =
-  | "tax_deferred"
-  | "tax_free"
-  | "separate_tax"
-  | "taxable";
 
 export const accounts = sqliteTable("accounts", {
   id: text("id").primaryKey(),
@@ -45,7 +38,6 @@ export const accounts = sqliteTable("accounts", {
   name: text("name").notNull(), // 별칭 (예: "삼성 IRP", "키움 위탁")
   broker: text("broker"), // 증권사
   accountType: text("account_type").notNull(), // AccountType
-  taxType: text("tax_type").notNull(), // TaxType
   owner: text("owner"), // 본인 / 배우자 등
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()

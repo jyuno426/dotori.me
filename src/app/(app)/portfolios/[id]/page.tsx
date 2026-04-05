@@ -25,7 +25,6 @@ interface Account {
   name: string;
   broker: string | null;
   accountType: string;
-  taxType: string;
 }
 
 interface CashBalanceSummary {
@@ -49,13 +48,6 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   isa: "ISA",
   brokerage: "일반 위탁",
   cma: "CMA",
-};
-
-const TAX_TYPE_LABELS: Record<string, string> = {
-  tax_deferred: "과세이연",
-  tax_free: "비과세",
-  separate_tax: "분리과세",
-  taxable: "일반과세",
 };
 
 export default function PortfolioDetailPage() {
@@ -203,9 +195,6 @@ export default function PortfolioDetailPage() {
                   <div className="flex gap-2 mt-1">
                     <span className="text-xs px-2 py-0.5 rounded-full bg-surface-dim text-foreground/60">
                       {ACCOUNT_TYPE_LABELS[acc.accountType] || acc.accountType}
-                    </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-surface-dim text-foreground/60">
-                      {TAX_TYPE_LABELS[acc.taxType] || acc.taxType}
                     </span>
                   </div>
                   {acc.broker && (

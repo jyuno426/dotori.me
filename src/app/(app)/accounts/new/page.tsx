@@ -43,7 +43,6 @@ export default function NewAccountPage() {
         name: form.get("name"),
         broker: form.get("broker") || null,
         accountType: form.get("accountType"),
-        taxType: form.get("taxType"),
         owner: form.get("owner") || null,
       }),
     });
@@ -99,35 +98,19 @@ export default function NewAccountPage() {
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium mb-1">계좌 유형 <span className="text-danger">*</span></label>
-            <select
-              name="accountType"
-              required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="irp">IRP</option>
-              <option value="pension">연금저축</option>
-              <option value="isa">ISA</option>
-              <option value="brokerage">일반 위탁</option>
-              <option value="cma">CMA</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">세금 유형 <span className="text-danger">*</span></label>
-            <select
-              name="taxType"
-              required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="tax_deferred">과세이연 (IRP/연금저축)</option>
-              <option value="tax_free">비과세 (ISA)</option>
-              <option value="separate_tax">분리과세</option>
-              <option value="taxable">일반과세</option>
-            </select>
-          </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">계좌 유형 <span className="text-danger">*</span></label>
+          <select
+            name="accountType"
+            required
+            className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="irp">IRP</option>
+            <option value="pension">연금저축</option>
+            <option value="isa">ISA</option>
+            <option value="brokerage">일반 위탁</option>
+            <option value="cma">CMA</option>
+          </select>
         </div>
 
         <div>
