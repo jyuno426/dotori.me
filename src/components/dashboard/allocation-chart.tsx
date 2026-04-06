@@ -8,7 +8,6 @@ const ASSET_CLASS_LABELS: Record<string, string> = {
   foreign_equity: "해외 주식",
   bond: "채권",
   alternative: "대안자산",
-  cash: "현금",
 };
 
 const COLORS = ["#4f7942", "#6b9f5b", "#d4a574", "#8b6f47", "#a0a0a0"];
@@ -16,8 +15,9 @@ const COLORS = ["#4f7942", "#6b9f5b", "#d4a574", "#8b6f47", "#a0a0a0"];
 interface Holding {
   ticker: string;
   name: string;
-  assetClass: string;
-  shares: number;
+  assetClass: string | null;
+  amount: number;
+  date: string;
 }
 
 interface Props {
@@ -33,7 +33,7 @@ export function AllocationChart({ portfolioIds }: Props) {
 
     Promise.all(
       portfolioIds.map((id) =>
-        fetch(`/api/holdings?portfolioId=${id}`).then((r) => {
+        fetch(`/api/account-entries?portfolioId=${id}&type=holding`).then((r) => {
           if (!r.ok) throw new Error();
           return r.json();
         })
@@ -61,7 +61,8 @@ export function AllocationChart({ portfolioIds }: Props) {
 
   const assetClassCounts = holdings.reduce(
     (acc, h) => {
-      acc[h.assetClass] = (acc[h.assetClass] || 0) + 1;
+      const cls = h.assetClass ?? "unknown";
+      acc[cls] = (acc[cls] || 0) + 1;
       return acc;
     },
     {} as Record<string, number>

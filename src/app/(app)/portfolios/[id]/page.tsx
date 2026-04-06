@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Building2, ArrowRightLeft, Wallet } from "lucide-react";
+import { Plus, Building2, Wallet } from "lucide-react";
 import Link from "next/link";
 import { HoldingsTable } from "@/components/portfolio/holdings-table";
-import { AddHoldingForm } from "@/components/portfolio/add-holding-form";
-import { CashFlowSection } from "@/components/portfolio/cash-flow-section";
-import { CashBalanceCard } from "@/components/portfolio/cash-balance-card";
+import { AccountEntryForm } from "@/components/portfolio/account-entry-form";
+import { AccountTimeline } from "@/components/portfolio/account-timeline";
 import { TargetAllocationForm } from "@/components/portfolio/target-allocation-form";
 import { DriftChart } from "@/components/portfolio/drift-chart";
 import { ReturnSummary } from "@/components/portfolio/return-summary";
 import { PriceInputForm } from "@/components/portfolio/price-input-form";
+import { InstrumentManager } from "@/components/portfolio/instrument-manager";
 import { formatKRW } from "@/lib/utils";
 
 interface Portfolio {
@@ -42,6 +42,14 @@ interface ReturnHolding {
   value: number;
 }
 
+interface Instrument {
+  id: string;
+  portfolioId: string;
+  ticker: string;
+  name: string;
+  assetClass: string;
+}
+
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   irp: "IRP",
   pension: "연금저축",
@@ -55,8 +63,7 @@ export default function PortfolioDetailPage() {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [showAddHolding, setShowAddHolding] = useState(false);
-  const [showCashFlow, setShowCashFlow] = useState(false);
+  const [showEntryForm, setShowEntryForm] = useState(false);
   const [showPriceInput, setShowPriceInput] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState("");
@@ -66,6 +73,9 @@ export default function PortfolioDetailPage() {
 
   // 수익률 데이터의 holdingDetails (가격 입력용)
   const [holdingDetails, setHoldingDetails] = useState<ReturnHolding[]>([]);
+
+  // 포트폴리오 종목 설정
+  const [instruments, setInstruments] = useState<Instrument[]>([]);
 
   useEffect(() => {
     fetch("/api/portfolios")
@@ -90,12 +100,23 @@ export default function PortfolioDetailPage() {
 
   // 예수금 잔액 로드
   useEffect(() => {
-    fetch(`/api/cash-balances?portfolioId=${params.id}`)
+    fetch(`/api/account-entries?portfolioId=${params.id}&type=cash`)
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
       })
       .then((data) => setCashBalances(data.balances ?? []))
+      .catch(() => {});
+  }, [params.id, refreshKey]);
+
+  // 종목 설정 로드
+  useEffect(() => {
+    fetch(`/api/instruments?portfolioId=${params.id}`)
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then(setInstruments)
       .catch(() => {});
   }, [params.id, refreshKey]);
 
@@ -174,8 +195,7 @@ export default function PortfolioDetailPage() {
                   key={acc.id}
                   onClick={() => {
                     setSelectedAccount(acc.id === selectedAccount ? null : acc.id);
-                    setShowAddHolding(false);
-                    setShowCashFlow(false);
+                    setShowEntryForm(false);
                   }}
                   className={`text-left rounded-xl border p-4 transition-colors ${
                     acc.id === selectedAccount
@@ -207,66 +227,43 @@ export default function PortfolioDetailPage() {
         )}
       </div>
 
-      {/* 계좌 선택 시: 보유 종목 + 예수금 + 입출금 */}
+      {/* 계좌 선택 시: 기록 입력 + 타임라인 */}
       {selectedAccount && (
         <>
-          {/* 예수금 잔액 */}
-          <CashBalanceCard
-            accountId={selectedAccount}
-            refreshKey={refreshKey}
-          />
-
-          {/* 보유 종목 */}
+          {/* 기록 입력 폼 */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-foreground/70">
-                보유 종목 — {accounts.find((a) => a.id === selectedAccount)?.name}
+                기록 입력 — {accounts.find((a) => a.id === selectedAccount)?.name}
               </h2>
               <button
-                onClick={() => setShowAddHolding(!showAddHolding)}
+                onClick={() => setShowEntryForm(!showEntryForm)}
                 className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
               >
                 <Plus size={14} />
-                종목 추가
+                {showEntryForm ? "닫기" : "기록 추가"}
               </button>
             </div>
 
-            {showAddHolding && (
-              <AddHoldingForm
+            {showEntryForm && (
+              <AccountEntryForm
                 accountId={selectedAccount}
-                onAdded={() => {
-                  setShowAddHolding(false);
+                instruments={instruments}
+                onSaved={() => {
                   setRefreshKey((k) => k + 1);
                 }}
               />
             )}
-
-            <HoldingsTable
-              accountId={selectedAccount}
-              refreshKey={refreshKey}
-            />
           </div>
 
-          {/* 입출금 기록 */}
+          {/* 타임라인 뷰 */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground/70 flex items-center gap-1.5">
-                <ArrowRightLeft size={14} />
-                입출금 기록 — {accounts.find((a) => a.id === selectedAccount)?.name}
-              </h2>
-              <button
-                onClick={() => setShowCashFlow(!showCashFlow)}
-                className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
-              >
-                <Plus size={14} />
-                입출금 추가
-              </button>
-            </div>
-
-            <CashFlowSection
+            <h2 className="text-sm font-semibold text-foreground/70">
+              기록 타임라인
+            </h2>
+            <AccountTimeline
               accountId={selectedAccount}
               refreshKey={refreshKey}
-              showFormInitially={showCashFlow}
             />
           </div>
         </>
@@ -275,8 +272,15 @@ export default function PortfolioDetailPage() {
       {/* 계좌 미선택 시: 포트폴리오 전체 뷰 */}
       {!selectedAccount && accounts.length > 0 && (
         <>
+          {/* 종목 설정 */}
+          <InstrumentManager
+            portfolioId={params.id}
+            instruments={instruments}
+            onChanged={() => setRefreshKey((k) => k + 1)}
+          />
+
           {/* 종목별 현재가 입력 */}
-          {holdingDetails.length > 0 && (
+          {instruments.length > 0 && (
             <div className="space-y-3">
               <button
                 onClick={() => setShowPriceInput(!showPriceInput)}
@@ -287,7 +291,16 @@ export default function PortfolioDetailPage() {
               {showPriceInput && (
                 <PriceInputForm
                   portfolioId={params.id}
-                  holdings={holdingDetails}
+                  holdings={instruments.map((inst) => {
+                    const detail = holdingDetails.find((h) => h.ticker === inst.ticker);
+                    return {
+                      ticker: inst.ticker,
+                      name: inst.name,
+                      shares: detail?.shares ?? 0,
+                      price: detail?.price ?? null,
+                      value: detail?.value ?? 0,
+                    };
+                  })}
                   onSaved={() => setRefreshKey((k) => k + 1)}
                 />
               )}
@@ -297,7 +310,7 @@ export default function PortfolioDetailPage() {
           {/* 목표 비중 설정 */}
           <TargetAllocationForm
             portfolioId={params.id}
-            holdings={holdingDetails.map((h) => ({ ticker: h.ticker, name: h.name }))}
+            holdings={instruments.map((inst) => ({ ticker: inst.ticker, name: inst.name }))}
             onSaved={() => setRefreshKey((k) => k + 1)}
           />
 

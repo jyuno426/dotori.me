@@ -7,8 +7,9 @@ interface Holding {
   id: string;
   ticker: string;
   name: string;
-  assetClass: string;
-  shares: number;
+  assetClass: string | null;
+  amount: number; // shares
+  date: string;
   accountName?: string;
 }
 
@@ -17,7 +18,6 @@ const ASSET_CLASS_LABELS: Record<string, string> = {
   foreign_equity: "해외 주식",
   bond: "채권",
   alternative: "대안자산",
-  cash: "현금",
 };
 
 interface Props {
@@ -34,16 +34,33 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
   function load() {
     setError("");
     const url = accountId
-      ? `/api/holdings?accountId=${accountId}`
-      : `/api/holdings?portfolioId=${portfolioId}`;
+      ? `/api/account-entries?accountId=${accountId}&type=holding`
+      : `/api/account-entries?portfolioId=${portfolioId}&type=holding`;
     fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
       })
-      .then(setHoldings)
+      .then((data) => {
+        // 포트폴리오 조회 시 계좌+종목별 최신 레코드만 표시
+        const latest = dedupeLatest(data);
+        setHoldings(latest);
+      })
       .catch(() => setError("종목 데이터를 불러오는데 실패했습니다."))
       .finally(() => setLoading(false));
+  }
+
+  // 같은 계좌+종목이면 최신 날짜만 유지
+  function dedupeLatest(items: Holding[]): Holding[] {
+    const map = new Map<string, Holding>();
+    for (const item of items) {
+      const key = `${item.accountName ?? ""}:${item.ticker}`;
+      const existing = map.get(key);
+      if (!existing || item.date > existing.date) {
+        map.set(key, item);
+      }
+    }
+    return [...map.values()];
   }
 
   useEffect(() => {
@@ -53,7 +70,7 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`"${name}" 종목을 삭제하시겠습니까?`)) return;
-    await fetch(`/api/holdings?id=${id}`, { method: "DELETE" });
+    await fetch(`/api/account-entries?id=${id}`, { method: "DELETE" });
     load();
   }
 
@@ -86,6 +103,7 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
             <th className="text-left px-4 py-3 font-medium text-foreground/60">코드</th>
             <th className="text-left px-4 py-3 font-medium text-foreground/60">자산군</th>
             <th className="text-right px-4 py-3 font-medium text-foreground/60">수량</th>
+            <th className="text-left px-4 py-3 font-medium text-foreground/60">기준일</th>
             {portfolioId && (
               <th className="text-left px-4 py-3 font-medium text-foreground/60">계좌</th>
             )}
@@ -99,10 +117,11 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
               <td className="px-4 py-3 text-foreground/60 font-mono text-xs">{h.ticker}</td>
               <td className="px-4 py-3">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-surface-dim text-foreground/60">
-                  {ASSET_CLASS_LABELS[h.assetClass] || h.assetClass}
+                  {ASSET_CLASS_LABELS[h.assetClass ?? ""] || h.assetClass || "-"}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right font-mono">{h.shares}</td>
+              <td className="px-4 py-3 text-right font-mono">{h.amount}</td>
+              <td className="px-4 py-3 text-foreground/60 text-xs">{h.date}</td>
               {portfolioId && (
                 <td className="px-4 py-3 text-foreground/60 text-xs">{h.accountName}</td>
               )}

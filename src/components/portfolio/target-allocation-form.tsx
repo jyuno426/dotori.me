@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 
-const CASH_TICKER = "__CASH__";
 
 interface HoldingItem {
   ticker: string;
@@ -31,7 +30,7 @@ export function TargetAllocationForm({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // 중복 제거된 종목 목록 + 현금
+  // 중복 제거된 종목 목록
   const uniqueHoldings = holdings.reduce((acc, h) => {
     if (!acc.find((a) => a.ticker === h.ticker)) acc.push(h);
     return acc;
@@ -60,18 +59,11 @@ export function TargetAllocationForm({
     setError("");
     setSuccess(false);
 
-    const allocations = [
-      ...uniqueHoldings.map((h) => ({
-        ticker: h.ticker,
-        name: h.name,
-        targetPercent: values[h.ticker] || 0,
-      })),
-      {
-        ticker: CASH_TICKER,
-        name: "현금",
-        targetPercent: values[CASH_TICKER] || 0,
-      },
-    ];
+    const allocations = uniqueHoldings.map((h) => ({
+      ticker: h.ticker,
+      name: h.name,
+      targetPercent: values[h.ticker] || 0,
+    }));
 
     const res = await fetch("/api/target-allocations", {
       method: "POST",
@@ -100,7 +92,7 @@ export function TargetAllocationForm({
     );
   }
 
-  const allItems = [...uniqueHoldings, { ticker: CASH_TICKER, name: "현금" }];
+  const allItems = uniqueHoldings;
 
   return (
     <div className="rounded-xl border border-surface-dim bg-surface p-5 space-y-4">
@@ -114,9 +106,7 @@ export function TargetAllocationForm({
           <div key={item.ticker} className="flex items-center gap-3">
             <div className="w-32 shrink-0">
               <p className="text-sm font-medium truncate">{item.name}</p>
-              {item.ticker !== CASH_TICKER && (
-                <p className="text-xs text-foreground/60">{item.ticker}</p>
-              )}
+              <p className="text-xs text-foreground/60">{item.ticker}</p>
             </div>
             <input
               type="number"

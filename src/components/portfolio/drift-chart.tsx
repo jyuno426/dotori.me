@@ -11,11 +11,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const CASH_TICKER = "__CASH__";
 
 interface ReturnsData {
   holdingDetails: { ticker: string; name: string; value: number }[];
-  totalCash: number;
   totalValue: number;
 }
 
@@ -73,9 +71,6 @@ export function DriftChart({
             tickerValues[hd.ticker] = { name: hd.name, value: hd.value };
           }
         }
-        // 현금
-        tickerValues[CASH_TICKER] = { name: "현금", value: returns.totalCash };
-
         // 목표 비중 맵
         const targetMap: Record<string, number> = {};
         const targetNames: Record<string, string> = {};

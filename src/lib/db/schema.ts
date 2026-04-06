@@ -55,42 +55,32 @@ export const targetAllocations = sqliteTable("target_allocations", {
   targetPercent: real("target_percent").notNull(), // 0~100
 });
 
-// ─── 보유 종목 스냅샷 (일자별 기록) ─────────────────────
-export const holdings = sqliteTable("holdings", {
+// ─── 포트폴리오 종목 (instruments) ──────────────────────
+export const instruments = sqliteTable("instruments", {
   id: text("id").primaryKey(),
-  accountId: text("account_id")
+  portfolioId: text("portfolio_id")
     .notNull()
-    .references(() => accounts.id, { onDelete: "cascade" }),
-  ticker: text("ticker").notNull(), // 종목 코드
-  name: text("name").notNull(), // 종목명
-  assetClass: text("asset_class").notNull(), // 자산군 분류
-  shares: real("shares").notNull(), // 보유 수량
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+    .references(() => portfolios.id, { onDelete: "cascade" }),
+  ticker: text("ticker").notNull(),
+  name: text("name").notNull(),
+  assetClass: text("asset_class").notNull(),
 });
 
-// ─── 예수금 기록 ────────────────────────────────────────
-export const cashBalances = sqliteTable("cash_balances", {
+// ─── 계좌 기록 (통합 time-series) ──────────────────────
+// type: 'holding' | 'cash' | 'cash_flow'
+// ticker: 종목코드 | '__CASH__' | '__CASHFLOW__'
+// UNIQUE(accountId, date, ticker)
+export const accountEntries = sqliteTable("account_entries", {
   id: text("id").primaryKey(),
   accountId: text("account_id")
     .notNull()
     .references(() => accounts.id, { onDelete: "cascade" }),
   date: text("date").notNull(), // YYYY-MM-DD
-  balance: real("balance").notNull(), // 예수금 잔액
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
-
-// ─── 입출금 기록 ────────────────────────────────────────
-export const cashFlows = sqliteTable("cash_flows", {
-  id: text("id").primaryKey(),
-  accountId: text("account_id")
-    .notNull()
-    .references(() => accounts.id, { onDelete: "cascade" }),
-  date: text("date").notNull(), // YYYY-MM-DD
-  amount: real("amount").notNull(), // 양수=입금, 음수=출금
+  type: text("type").notNull(), // 'holding' | 'cash' | 'cash_flow'
+  ticker: text("ticker").notNull(), // 종목코드 | '__CASH__' | '__CASHFLOW__'
+  name: text("name").notNull(), // 종목명 | '예수금' | '입출금'
+  assetClass: text("asset_class"), // holdings만 사용
+  amount: real("amount").notNull(), // 수량(holding) | 잔액(cash) | 금액(cash_flow)
   memo: text("memo"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
@@ -104,6 +94,18 @@ export const sessions = sqliteTable("sessions", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   expiresAt: integer("expires_at").notNull(), // unix ms
+});
+
+// ─── 상장 종목 마스터 (KRX) ─────────────────────────────
+export const securities = sqliteTable("securities", {
+  ticker: text("ticker").primaryKey(), // KRX 종목코드
+  name: text("name").notNull(),
+  market: text("market").notNull(), // "ETF" | "STOCK" | "ETN"
+  assetClass: text("asset_class"), // domestic_equity | foreign_equity | bond | alternative
+  category: text("category"), // KRX 원본 카테고리
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 // ─── 종가 데이터 (시세 캐시) ────────────────────────────
