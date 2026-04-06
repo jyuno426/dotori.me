@@ -57,17 +57,16 @@ export function createTestDb() {
       asset_class TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS account_entries (
+    CREATE TABLE IF NOT EXISTS account_snapshots (
       id TEXT PRIMARY KEY,
       account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
       date TEXT NOT NULL,
-      type TEXT NOT NULL,
-      ticker TEXT NOT NULL,
-      name TEXT NOT NULL,
-      asset_class TEXT,
-      amount REAL NOT NULL,
+      holdings TEXT NOT NULL,
+      cash REAL NOT NULL,
+      cash_flows TEXT,
       memo TEXT,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE(account_id, date)
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
@@ -158,6 +157,44 @@ export function seedTestAccount(
     .run();
 
   return { id: "test-account-1", portfolioId, name: "테스트 IRP" };
+}
+
+/**
+ * 테스트용 스냅샷 생성
+ */
+export function seedTestSnapshot(
+  db: ReturnType<typeof createTestDb>["db"],
+  accountId: string = "test-account-1",
+  overrides: {
+    id?: string;
+    date?: string;
+    holdings?: Array<{ ticker: string; name: string; assetClass: string; amount: number }>;
+    cash?: number;
+    cashFlows?: Array<{ flowType: string; amount: number; memo?: string }>;
+    memo?: string;
+  } = {},
+) {
+  const id = overrides.id ?? "test-snapshot-1";
+  const date = overrides.date ?? "2026-04-07";
+  const holdings = overrides.holdings ?? [
+    { ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 100 },
+  ];
+  const cash = overrides.cash ?? 10000;
+  const cashFlows = overrides.cashFlows ?? null;
+
+  db.insert(schema.accountSnapshots)
+    .values({
+      id,
+      accountId,
+      date,
+      holdings: JSON.stringify(holdings),
+      cash,
+      cashFlows: cashFlows ? JSON.stringify(cashFlows) : null,
+      memo: overrides.memo ?? null,
+    })
+    .run();
+
+  return { id, accountId, date, holdings, cash, cashFlows };
 }
 
 /**

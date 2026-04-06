@@ -6,6 +6,7 @@ import {
   seedTestPortfolio,
   seedTestAccount,
   seedTestSession,
+  seedTestSnapshot,
 } from "../helpers/test-db";
 import { cookieStore } from "../setup";
 import { createRequest, parseResponse } from "../helpers/request";
@@ -32,17 +33,6 @@ describe("/api/returns", () => {
     cookieStore.set("dotori_session", token);
     seedTestPortfolio(testDb.db);
     seedTestAccount(testDb.db);
-  }
-
-  function insertEntry(data: Record<string, unknown>) {
-    testDb.db
-      .insert(schema.accountEntries)
-      .values({
-        id: `entry-${Math.random().toString(36).slice(2, 8)}`,
-        accountId: "test-account-1",
-        ...data,
-      } as typeof schema.accountEntries.$inferInsert)
-      .run();
   }
 
   function insertPrice(ticker: string, date: string, close: number) {
@@ -87,41 +77,30 @@ describe("/api/returns", () => {
   it("입출금 + 보유 + 예수금으로 수익률을 계산한다", async () => {
     authenticate();
 
-    // 입금 1,000,000원
-    insertEntry({
+    // 1월: 입금 1,000,000원
+    seedTestSnapshot(testDb.db, "test-account-1", {
+      id: "snap-1",
       date: "2025-01-01",
-      type: "cash_flow",
-      ticker: "__CASHFLOW__",
-      name: "입출금",
-      amount: 1000000,
+      holdings: [],
+      cash: 0,
+      cashFlows: [{ flowType: "deposit", amount: 1000000 }],
     });
 
-    // 출금 -100,000원
-    insertEntry({
+    // 2월: 출금 100,000원
+    seedTestSnapshot(testDb.db, "test-account-1", {
+      id: "snap-2",
       date: "2025-02-01",
-      type: "cash_flow",
-      ticker: "__CASHFLOW__",
-      name: "입출금",
-      amount: -100000,
+      holdings: [],
+      cash: 0,
+      cashFlows: [{ flowType: "withdrawal", amount: 100000 }],
     });
 
-    // 예수금 200,000원
-    insertEntry({
+    // 3월: 보유 종목 100주, 예수금 200,000원
+    seedTestSnapshot(testDb.db, "test-account-1", {
+      id: "snap-3",
       date: "2025-03-01",
-      type: "cash",
-      ticker: "__CASH__",
-      name: "예수금",
-      amount: 200000,
-    });
-
-    // KODEX 200 보유 100주
-    insertEntry({
-      date: "2025-03-01",
-      type: "holding",
-      ticker: "069500",
-      name: "KODEX 200",
-      assetClass: "domestic_equity",
-      amount: 100,
+      holdings: [{ ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 100 }],
+      cash: 200000,
     });
 
     // 현재가 8,000원
@@ -142,7 +121,7 @@ describe("/api/returns", () => {
     // holdingsValue = 100 * 8,000 = 800,000
     expect(body.holdingsValue).toBe(800000);
 
-    // totalCash = 200,000
+    // totalCash = 200,000 (최신 스냅샷)
     expect(body.totalCash).toBe(200000);
 
     // totalValue = 800,000 + 200,000 = 1,000,000
@@ -158,13 +137,11 @@ describe("/api/returns", () => {
   it("가격 데이터가 없는 종목을 missingPrices에 포함한다", async () => {
     authenticate();
 
-    insertEntry({
+    seedTestSnapshot(testDb.db, "test-account-1", {
+      id: "snap-1",
       date: "2025-03-01",
-      type: "holding",
-      ticker: "069500",
-      name: "KODEX 200",
-      assetClass: "domestic_equity",
-      amount: 100,
+      holdings: [{ ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 100 }],
+      cash: 0,
     });
 
     const req = createRequest(
@@ -179,13 +156,11 @@ describe("/api/returns", () => {
   it("holdingDetails에 종목별 상세를 포함한다", async () => {
     authenticate();
 
-    insertEntry({
+    seedTestSnapshot(testDb.db, "test-account-1", {
+      id: "snap-1",
       date: "2025-03-01",
-      type: "holding",
-      ticker: "069500",
-      name: "KODEX 200",
-      assetClass: "domestic_equity",
-      amount: 50,
+      holdings: [{ ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 50 }],
+      cash: 0,
     });
 
     insertPrice("069500", "2025-03-01", 10000);

@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { portfolios, accounts, accountEntries, prices } from "@/lib/db/schema";
+import { portfolios, accounts, accountSnapshots, prices } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and, desc } from "drizzle-orm";
+
+interface HoldingEntry {
+  ticker: string;
+  name: string;
+  assetClass: string;
+  amount: number;
+}
+
+interface CashFlowEntry {
+  flowType: string;
+  amount: number;
+  memo?: string;
+}
 
 // 포트폴리오 수익률 계산
 export async function GET(req: NextRequest) {
@@ -30,50 +43,64 @@ export async function GET(req: NextRequest) {
 
   const accountIds = accs.map((a) => a.id);
 
-  // 2. 입출금 합계 (cash_flow 타입)
+  // 2. 모든 스냅샷에서 입출금 합계
   let totalDeposit = 0;
   let totalWithdrawal = 0;
   for (const accId of accountIds) {
-    const flows = db
+    const allSnapshots = db
       .select()
-      .from(accountEntries)
-      .where(and(eq(accountEntries.accountId, accId), eq(accountEntries.type, "cash_flow")))
+      .from(accountSnapshots)
+      .where(eq(accountSnapshots.accountId, accId))
       .all();
-    for (const f of flows) {
-      if (f.amount > 0) totalDeposit += f.amount;
-      else totalWithdrawal += f.amount;
+    for (const snap of allSnapshots) {
+      const flows: CashFlowEntry[] = snap.cashFlows ? JSON.parse(snap.cashFlows) : [];
+      for (const f of flows) {
+        const signed = f.flowType === "withdrawal" ? -f.amount : f.amount;
+        if (signed > 0) totalDeposit += signed;
+        else totalWithdrawal += signed;
+      }
     }
   }
   const netInvested = totalDeposit + totalWithdrawal;
 
-  // 3. 예수금 합계 (cash 타입, 각 계좌별 최신)
+  // 3. 각 계좌별 최신 스냅샷에서 예수금
   let totalCash = 0;
   for (const accId of accountIds) {
     const latest = db
       .select()
-      .from(accountEntries)
-      .where(and(eq(accountEntries.accountId, accId), eq(accountEntries.type, "cash")))
-      .orderBy(desc(accountEntries.date))
+      .from(accountSnapshots)
+      .where(eq(accountSnapshots.accountId, accId))
+      .orderBy(desc(accountSnapshots.date))
       .limit(1)
       .get();
-    if (latest) totalCash += latest.amount;
+    if (latest) totalCash += latest.cash;
   }
 
-  // 4. 보유 종목 평가액 (holding 타입, 각 계좌+종목별 최신)
-  const allHoldingEntries = db
-    .select({ entry: accountEntries, account: accounts })
-    .from(accountEntries)
-    .innerJoin(accounts, eq(accountEntries.accountId, accounts.id))
-    .where(and(eq(accounts.portfolioId, portfolioId), eq(accountEntries.type, "holding")))
-    .orderBy(desc(accountEntries.date))
-    .all();
+  // 4. 각 계좌별 최신 스냅샷에서 보유 종목 평가액
+  const allLatestHoldings: HoldingEntry[] = [];
+  for (const accId of accountIds) {
+    const latest = db
+      .select()
+      .from(accountSnapshots)
+      .where(eq(accountSnapshots.accountId, accId))
+      .orderBy(desc(accountSnapshots.date))
+      .limit(1)
+      .get();
+    if (latest) {
+      const holdings: HoldingEntry[] = JSON.parse(latest.holdings);
+      allLatestHoldings.push(...holdings);
+    }
+  }
 
-  // 계좌+종목 조합별 최신 레코드만 추출
-  const latestHoldings = new Map<string, typeof allHoldingEntries[0]>();
-  for (const row of allHoldingEntries) {
-    const key = `${row.entry.accountId}:${row.entry.ticker}`;
-    if (!latestHoldings.has(key)) {
-      latestHoldings.set(key, row);
+  // 종목별 합산 (같은 ticker가 여러 계좌에 있을 수 있음)
+  const tickerShares = new Map<string, { name: string; shares: number }>();
+  for (const h of allLatestHoldings) {
+    if (h.amount <= 0) continue;
+    const existing = tickerShares.get(h.ticker);
+    if (existing) {
+      existing.shares += h.amount;
+    } else {
+      tickerShares.set(h.ticker, { name: h.name, shares: h.amount });
     }
   }
 
@@ -87,28 +114,22 @@ export async function GET(req: NextRequest) {
     value: number;
   }[] = [];
 
-  for (const [, { entry }] of latestHoldings) {
+  for (const [ticker, { name, shares }] of tickerShares) {
     const latestPrice = db
       .select()
       .from(prices)
-      .where(eq(prices.ticker, entry.ticker))
+      .where(eq(prices.ticker, ticker))
       .orderBy(desc(prices.date))
       .limit(1)
       .get();
 
     const price = latestPrice?.close ?? null;
-    const value = price != null ? entry.amount * price : 0;
+    const value = price != null ? shares * price : 0;
     holdingsValue += value;
 
-    if (price == null) missingPricesSet.add(entry.ticker);
+    if (price == null) missingPricesSet.add(ticker);
 
-    holdingDetails.push({
-      ticker: entry.ticker,
-      name: entry.name,
-      shares: entry.amount,
-      price,
-      value,
-    });
+    holdingDetails.push({ ticker, name, shares, price, value });
   }
 
   // 5. 총 평가액

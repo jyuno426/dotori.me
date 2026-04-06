@@ -66,21 +66,18 @@ export const instruments = sqliteTable("instruments", {
   assetClass: text("asset_class").notNull(),
 });
 
-// ─── 계좌 기록 (통합 time-series) ──────────────────────
-// type: 'holding' | 'cash' | 'cash_flow'
-// ticker: 종목코드 | '__CASH__' | '__CASHFLOW__'
-// UNIQUE(accountId, date, ticker)
-export const accountEntries = sqliteTable("account_entries", {
+// ─── 계좌 스냅샷 (날짜별 1행) ──────────────────────────
+// UNIQUE(accountId, date)
+// holdings, cashFlows는 JSON 문자열
+export const accountSnapshots = sqliteTable("account_snapshots", {
   id: text("id").primaryKey(),
   accountId: text("account_id")
     .notNull()
     .references(() => accounts.id, { onDelete: "cascade" }),
   date: text("date").notNull(), // YYYY-MM-DD
-  type: text("type").notNull(), // 'holding' | 'cash' | 'cash_flow'
-  ticker: text("ticker").notNull(), // 종목코드 | '__CASH__' | '__CASHFLOW__'
-  name: text("name").notNull(), // 종목명 | '예수금' | '입출금'
-  assetClass: text("asset_class"), // holdings만 사용
-  amount: real("amount").notNull(), // 수량(holding) | 잔액(cash) | 금액(cash_flow)
+  holdings: text("holdings").notNull(), // JSON: [{ ticker, name, assetClass, amount }]
+  cash: real("cash").notNull(), // 예수금
+  cashFlows: text("cash_flows"), // JSON: [{ flowType, amount, memo }] | null
   memo: text("memo"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()

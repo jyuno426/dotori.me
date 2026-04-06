@@ -21,7 +21,7 @@ const { GET, POST, DELETE } = await import(
   "@/app/api/account-entries/route"
 );
 
-describe("/api/account-entries", () => {
+describe("/api/account-entries (스냅샷)", () => {
   beforeEach(() => {
     testDb = createTestDb();
     cookieStore.clear();
@@ -36,79 +36,75 @@ describe("/api/account-entries", () => {
   }
 
   describe("POST", () => {
-    it("보유 종목 기록을 추가한다", async () => {
+    it("스냅샷을 생성한다", async () => {
       authenticate();
       const req = createRequest("POST", "/api/account-entries", {
         accountId: "test-account-1",
         date: "2025-01-15",
-        type: "holding",
-        ticker: "069500",
-        name: "KODEX 200",
-        assetClass: "domestic_equity",
-        amount: 100,
+        holdings: [
+          { ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 100 },
+        ],
+        cash: 50000,
+        cashFlows: [{ flowType: "deposit", amount: 1000000, memo: "월 적립" }],
+        memo: "1월 기록",
       });
       const { body, status } = await parseResponse(await POST(req));
       expect(status).toBe(201);
-      expect(body.ticker).toBe("069500");
-      expect(body.amount).toBe(100);
+      expect(body.date).toBe("2025-01-15");
+      expect(body.cash).toBe(50000);
+      expect(body.memo).toBe("1월 기록");
+
+      const holdings = JSON.parse(body.holdings);
+      expect(holdings).toHaveLength(1);
+      expect(holdings[0].ticker).toBe("069500");
+      expect(holdings[0].amount).toBe(100);
+
+      const cashFlows = JSON.parse(body.cashFlows);
+      expect(cashFlows).toHaveLength(1);
+      expect(cashFlows[0].flowType).toBe("deposit");
+      expect(cashFlows[0].amount).toBe(1000000);
     });
 
-    it("같은 (accountId, date, ticker) 조합이면 upsert한다", async () => {
+    it("같은 (accountId, date) 조합이면 upsert한다", async () => {
       authenticate();
       const create = createRequest("POST", "/api/account-entries", {
         accountId: "test-account-1",
         date: "2025-01-15",
-        type: "holding",
-        ticker: "069500",
-        name: "KODEX 200",
-        assetClass: "domestic_equity",
-        amount: 100,
+        holdings: [{ ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 100 }],
+        cash: 50000,
       });
       await POST(create);
 
       const update = createRequest("POST", "/api/account-entries", {
         accountId: "test-account-1",
         date: "2025-01-15",
-        type: "holding",
-        ticker: "069500",
-        name: "KODEX 200",
-        assetClass: "domestic_equity",
-        amount: 150,
+        holdings: [{ ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 200 }],
+        cash: 70000,
       });
       const { body, status } = await parseResponse(await POST(update));
       expect(status).toBe(200);
-      expect(body.amount).toBe(150);
+      expect(body.cash).toBe(70000);
+      const holdings = JSON.parse(body.holdings);
+      expect(holdings[0].amount).toBe(200);
     });
 
-    it("예수금 기록을 추가한다", async () => {
+    it("입출금을 여러 건 기록할 수 있다", async () => {
       authenticate();
       const req = createRequest("POST", "/api/account-entries", {
         accountId: "test-account-1",
         date: "2025-01-15",
-        type: "cash",
-        ticker: "__CASH__",
-        name: "예수금",
-        amount: 500000,
+        holdings: [],
+        cash: 0,
+        cashFlows: [
+          { flowType: "deposit", amount: 1000000, memo: "월 적립" },
+          { flowType: "withdrawal", amount: 200000, memo: "생활비" },
+          { flowType: "deposit", amount: 500000 },
+        ],
       });
       const { body, status } = await parseResponse(await POST(req));
       expect(status).toBe(201);
-      expect(body.type).toBe("cash");
-    });
-
-    it("입출금 기록을 추가한다", async () => {
-      authenticate();
-      const req = createRequest("POST", "/api/account-entries", {
-        accountId: "test-account-1",
-        date: "2025-01-15",
-        type: "cash_flow",
-        ticker: "__CASHFLOW__",
-        name: "입출금",
-        amount: 1000000,
-        memo: "월 적립",
-      });
-      const { body, status } = await parseResponse(await POST(req));
-      expect(status).toBe(201);
-      expect(body.memo).toBe("월 적립");
+      const cashFlows = JSON.parse(body.cashFlows);
+      expect(cashFlows).toHaveLength(3);
     });
 
     it("필수 필드 누락 시 400을 반환한다", async () => {
@@ -126,13 +122,22 @@ describe("/api/account-entries", () => {
       const req = createRequest("POST", "/api/account-entries", {
         accountId: "nonexistent",
         date: "2025-01-15",
-        type: "cash",
-        ticker: "__CASH__",
-        name: "예수금",
-        amount: 100,
+        holdings: [],
+        cash: 0,
       });
       const { status } = await parseResponse(await POST(req));
       expect(status).toBe(404);
+    });
+
+    it("인증 없이 요청하면 401을 반환한다", async () => {
+      const req = createRequest("POST", "/api/account-entries", {
+        accountId: "test-account-1",
+        date: "2025-01-15",
+        holdings: [],
+        cash: 0,
+      });
+      const { status } = await parseResponse(await POST(req));
+      expect(status).toBe(401);
     });
   });
 
@@ -144,141 +149,66 @@ describe("/api/account-entries", () => {
       expect(status).toBe(400);
     });
 
-    it("accountId로 holding 기록을 조회한다", async () => {
+    it("accountId로 스냅샷 목록을 조회한다", async () => {
       authenticate();
-      // 데이터 삽입
-      const create = createRequest("POST", "/api/account-entries", {
-        accountId: "test-account-1",
-        date: "2025-01-15",
-        type: "holding",
-        ticker: "069500",
-        name: "KODEX 200",
-        assetClass: "domestic_equity",
-        amount: 100,
-      });
-      await POST(create);
-
-      const req = createRequest(
-        "GET",
-        "/api/account-entries?accountId=test-account-1&type=holding",
-      );
-      const { body, status } = await parseResponse(await GET(req));
-      expect(status).toBe(200);
-      expect(Array.isArray(body)).toBe(true);
-      expect(body).toHaveLength(1);
-    });
-
-    it("cash 타입은 최신 1건만 반환한다", async () => {
-      authenticate();
-      // 두 개의 cash 기록 삽입
       await POST(
         createRequest("POST", "/api/account-entries", {
           accountId: "test-account-1",
           date: "2025-01-15",
-          type: "cash",
-          ticker: "__CASH__",
-          name: "예수금",
-          amount: 500000,
+          holdings: [{ ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 100 }],
+          cash: 50000,
         }),
       );
       await POST(
         createRequest("POST", "/api/account-entries", {
           accountId: "test-account-1",
           date: "2025-02-15",
-          type: "cash",
-          ticker: "__CASH__",
-          name: "예수금",
-          amount: 600000,
+          holdings: [{ ticker: "069500", name: "KODEX 200", assetClass: "domestic_equity", amount: 120 }],
+          cash: 60000,
         }),
       );
 
-      const req = createRequest(
-        "GET",
-        "/api/account-entries?accountId=test-account-1&type=cash",
-      );
+      const req = createRequest("GET", "/api/account-entries?accountId=test-account-1");
       const { body, status } = await parseResponse(await GET(req));
       expect(status).toBe(200);
-      // cash는 최신 1건 (날짜 내림차순이므로 2월)
-      expect(body).not.toBeNull();
-      expect(body.amount).toBe(600000);
+      expect(Array.isArray(body)).toBe(true);
+      expect(body).toHaveLength(2);
+      // 최신 날짜가 먼저
+      expect(body[0].date).toBe("2025-02-15");
     });
 
-    it("cash_flow 타입은 summary를 포함한다", async () => {
-      authenticate();
-      await POST(
-        createRequest("POST", "/api/account-entries", {
-          accountId: "test-account-1",
-          date: "2025-01-01",
-          type: "cash_flow",
-          ticker: "__CASHFLOW__",
-          name: "입출금",
-          amount: 1000000,
-        }),
-      );
-      await POST(
-        createRequest("POST", "/api/account-entries", {
-          accountId: "test-account-1",
-          date: "2025-02-01",
-          type: "cash_flow",
-          ticker: "__CASHFLOW__",
-          name: "입출금",
-          amount: -200000,
-        }),
-      );
-
-      const req = createRequest(
-        "GET",
-        "/api/account-entries?accountId=test-account-1&type=cash_flow",
-      );
-      const { body, status } = await parseResponse(await GET(req));
-      expect(status).toBe(200);
-      expect(body.summary.totalDeposit).toBe(1000000);
-      expect(body.summary.totalWithdrawal).toBe(-200000);
-      expect(body.summary.net).toBe(800000);
-    });
-
-    it("portfolioId로 cash 타입을 조회하면 계좌별 잔액을 반환한다", async () => {
+    it("portfolioId로 전체 스냅샷을 조회한다", async () => {
       authenticate();
       await POST(
         createRequest("POST", "/api/account-entries", {
           accountId: "test-account-1",
           date: "2025-01-15",
-          type: "cash",
-          ticker: "__CASH__",
-          name: "예수금",
-          amount: 500000,
+          holdings: [],
+          cash: 50000,
         }),
       );
 
-      const req = createRequest(
-        "GET",
-        "/api/account-entries?portfolioId=test-portfolio-1&type=cash",
-      );
+      const req = createRequest("GET", "/api/account-entries?portfolioId=test-portfolio-1");
       const { body, status } = await parseResponse(await GET(req));
       expect(status).toBe(200);
-      expect(body.balances).toHaveLength(1);
-      expect(body.total).toBe(500000);
+      expect(Array.isArray(body)).toBe(true);
+      expect(body).toHaveLength(1);
+      expect(body[0].accountName).toBe("테스트 IRP");
     });
   });
 
   describe("DELETE", () => {
-    it("기록을 삭제한다", async () => {
+    it("스냅샷을 삭제한다", async () => {
       authenticate();
       const createReq = createRequest("POST", "/api/account-entries", {
         accountId: "test-account-1",
         date: "2025-01-15",
-        type: "holding",
-        ticker: "069500",
-        name: "KODEX 200",
-        assetClass: "domestic_equity",
-        amount: 100,
+        holdings: [],
+        cash: 0,
       });
       const { body: created } = await parseResponse(await POST(createReq));
 
-      const req = createRequest(
-        "DELETE",
-        `/api/account-entries?id=${created.id}`,
-      );
+      const req = createRequest("DELETE", `/api/account-entries?id=${created.id}`);
       const { body, status } = await parseResponse(await DELETE(req));
       expect(status).toBe(200);
       expect(body.ok).toBe(true);
@@ -291,12 +221,9 @@ describe("/api/account-entries", () => {
       expect(status).toBe(400);
     });
 
-    it("존재하지 않는 기록 삭제 시 404를 반환한다", async () => {
+    it("존재하지 않는 스냅샷 삭제 시 404를 반환한다", async () => {
       authenticate();
-      const req = createRequest(
-        "DELETE",
-        "/api/account-entries?id=nonexistent",
-      );
+      const req = createRequest("DELETE", "/api/account-entries?id=nonexistent");
       const { status } = await parseResponse(await DELETE(req));
       expect(status).toBe(404);
     });

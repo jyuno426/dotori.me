@@ -1,14 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
 
-interface Holding {
+interface HoldingEntry {
+  ticker: string;
+  name: string;
+  assetClass: string;
+  amount: number;
+}
+
+interface Snapshot {
   id: string;
+  accountId: string;
+  date: string;
+  holdings: string; // JSON
+  accountName?: string;
+}
+
+interface HoldingRow {
   ticker: string;
   name: string;
   assetClass: string | null;
-  amount: number; // shares
+  amount: number;
   date: string;
   accountName?: string;
 }
@@ -27,52 +40,62 @@ interface Props {
 }
 
 export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
-  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [holdings, setHoldings] = useState<HoldingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   function load() {
     setError("");
     const url = accountId
-      ? `/api/account-entries?accountId=${accountId}&type=holding`
-      : `/api/account-entries?portfolioId=${portfolioId}&type=holding`;
+      ? `/api/account-entries?accountId=${accountId}`
+      : `/api/account-entries?portfolioId=${portfolioId}`;
     fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
       })
-      .then((data) => {
-        // 포트폴리오 조회 시 계좌+종목별 최신 레코드만 표시
-        const latest = dedupeLatest(data);
+      .then((data: Snapshot[]) => {
+        // 각 계좌+종목 조합별 최신 스냅샷에서 보유 종목 추출
+        const latest = extractLatestHoldings(data);
         setHoldings(latest);
       })
       .catch(() => setError("종목 데이터를 불러오는데 실패했습니다."))
       .finally(() => setLoading(false));
   }
 
-  // 같은 계좌+종목이면 최신 날짜만 유지
-  function dedupeLatest(items: Holding[]): Holding[] {
-    const map = new Map<string, Holding>();
-    for (const item of items) {
-      const key = `${item.accountName ?? ""}:${item.ticker}`;
-      const existing = map.get(key);
-      if (!existing || item.date > existing.date) {
-        map.set(key, item);
+  // 스냅샷에서 최신 보유 종목 추출 (계좌+종목별 최신 날짜)
+  function extractLatestHoldings(snapshots: Snapshot[]): HoldingRow[] {
+    // 계좌별로 최신 스냅샷만 추출
+    const latestByAccount = new Map<string, Snapshot>();
+    for (const snap of snapshots) {
+      const existing = latestByAccount.get(snap.accountId);
+      if (!existing || snap.date > existing.date) {
+        latestByAccount.set(snap.accountId, snap);
       }
     }
-    return [...map.values()];
+
+    const result: HoldingRow[] = [];
+    for (const snap of latestByAccount.values()) {
+      const entries: HoldingEntry[] = JSON.parse(snap.holdings);
+      for (const h of entries) {
+        if (h.amount <= 0) continue;
+        result.push({
+          ticker: h.ticker,
+          name: h.name,
+          assetClass: h.assetClass,
+          amount: h.amount,
+          date: snap.date,
+          accountName: (snap as Snapshot & { accountName?: string }).accountName,
+        });
+      }
+    }
+    return result;
   }
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId, portfolioId, refreshKey]);
-
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`"${name}" 종목을 삭제하시겠습니까?`)) return;
-    await fetch(`/api/account-entries?id=${id}`, { method: "DELETE" });
-    load();
-  }
 
   if (loading) {
     return <div className="animate-pulse text-foreground/60 text-sm py-4">로딩 중...</div>;
@@ -107,12 +130,11 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
             {portfolioId && (
               <th className="text-left px-4 py-3 font-medium text-foreground/60">계좌</th>
             )}
-            <th className="w-14"></th>
           </tr>
         </thead>
         <tbody>
-          {holdings.map((h) => (
-            <tr key={h.id} className="border-b border-surface-dim last:border-0 hover:bg-surface-dim/30">
+          {holdings.map((h, idx) => (
+            <tr key={`${h.ticker}-${idx}`} className="border-b border-surface-dim last:border-0 hover:bg-surface-dim/30">
               <td className="px-4 py-3 font-medium">{h.name}</td>
               <td className="px-4 py-3 text-foreground/60 font-mono text-xs">{h.ticker}</td>
               <td className="px-4 py-3">
@@ -125,15 +147,6 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
               {portfolioId && (
                 <td className="px-4 py-3 text-foreground/60 text-xs">{h.accountName}</td>
               )}
-              <td className="px-2 py-3">
-                <button
-                  onClick={() => handleDelete(h.id, h.name)}
-                  aria-label={`${h.name} 삭제`}
-                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-foreground/60 hover:text-danger transition-colors rounded-lg"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </td>
             </tr>
           ))}
         </tbody>
