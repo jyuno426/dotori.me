@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Building2 } from "lucide-react";
+import { Plus, Building2, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 interface Account {
@@ -55,9 +55,10 @@ export default function AccountsPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {accounts.map((acc) => (
-            <div
+            <Link
               key={acc.id}
-              className="rounded-xl border border-surface-dim bg-surface p-5"
+              href={`/accounts/${acc.id}`}
+              className="rounded-xl border border-surface-dim bg-surface p-5 transition-colors hover:border-primary/30 group"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -66,6 +67,7 @@ export default function AccountsPage() {
                     <p className="text-xs text-foreground/60 mt-0.5">{acc.broker}</p>
                   )}
                 </div>
+                <ChevronRight size={16} className="text-foreground/30 group-hover:text-foreground/60 transition-colors mt-1" />
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
@@ -77,7 +79,7 @@ export default function AccountsPage() {
                   포트폴리오: {acc.portfolioName}
                 </p>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       )}

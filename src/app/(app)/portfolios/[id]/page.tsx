@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Building2, Wallet } from "lucide-react";
+import { Plus, Building2, Wallet, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { HoldingsTable } from "@/components/portfolio/holdings-table";
-import { SnapshotEntryForm } from "@/components/portfolio/snapshot-entry-form";
-import { AccountTimeline } from "@/components/portfolio/account-timeline";
 import { TargetAllocationForm } from "@/components/portfolio/target-allocation-form";
 import { DriftChart } from "@/components/portfolio/drift-chart";
 import { ReturnSummary } from "@/components/portfolio/return-summary";
@@ -50,12 +48,6 @@ interface Instrument {
   assetClass: string;
 }
 
-interface TargetAllocation {
-  ticker: string;
-  name: string;
-  targetPercent: number;
-}
-
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   irp: "IRP",
   pension: "연금저축",
@@ -68,13 +60,11 @@ export default function PortfolioDetailPage() {
   const params = useParams<{ id: string }>();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [showSnapshotForm, setShowSnapshotForm] = useState(false);
   const [showPriceInput, setShowPriceInput] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState("");
 
-  // 계좌별 최신 예수금 (스냅샷에서 추출)
+  // 계좌별 최신 예수금
   const [cashByAccount, setCashByAccount] = useState<Record<string, number>>({});
 
   // 수익률 데이터의 holdingDetails (가격 입력용)
@@ -82,9 +72,6 @@ export default function PortfolioDetailPage() {
 
   // 포트폴리오 종목 설정
   const [instruments, setInstruments] = useState<Instrument[]>([]);
-
-  // 목표 비중
-  const [targetAllocations, setTargetAllocations] = useState<TargetAllocation[]>([]);
 
   useEffect(() => {
     fetch("/api/portfolios")
@@ -107,7 +94,7 @@ export default function PortfolioDetailPage() {
       .catch(() => setError("계좌 데이터를 불러오는데 실패했습니다."));
   }, [params.id]);
 
-  // 예수금 로드 — 포트폴리오 전체 스냅샷에서 계좌별 최신 cash 추출
+  // 예수금 로드
   useEffect(() => {
     fetch(`/api/account-entries?portfolioId=${params.id}`)
       .then((r) => {
@@ -139,17 +126,6 @@ export default function PortfolioDetailPage() {
       .catch(() => {});
   }, [params.id, refreshKey]);
 
-  // 목표 비중 로드
-  useEffect(() => {
-    fetch(`/api/target-allocations?portfolioId=${params.id}`)
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
-      .then(setTargetAllocations)
-      .catch(() => {});
-  }, [params.id, refreshKey]);
-
   // 수익률 데이터에서 holdingDetails 추출
   useEffect(() => {
     fetch(`/api/returns?portfolioId=${params.id}`)
@@ -160,10 +136,6 @@ export default function PortfolioDetailPage() {
       .then((data) => setHoldingDetails(data.holdingDetails ?? []))
       .catch(() => {});
   }, [params.id, refreshKey]);
-
-  function getCashBalance(accountId: string): number | null {
-    return cashByAccount[accountId] ?? null;
-  }
 
   if (error) {
     return (
@@ -218,28 +190,24 @@ export default function PortfolioDetailPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {accounts.map((acc) => {
-              const balance = getCashBalance(acc.id);
+              const balance = cashByAccount[acc.id] ?? null;
               return (
-                <button
+                <Link
                   key={acc.id}
-                  onClick={() => {
-                    setSelectedAccount(acc.id === selectedAccount ? null : acc.id);
-                    setShowSnapshotForm(false);
-                  }}
-                  className={`text-left rounded-xl border p-4 transition-colors ${
-                    acc.id === selectedAccount
-                      ? "border-primary bg-primary/5"
-                      : "border-surface-dim bg-surface hover:border-primary/30"
-                  }`}
+                  href={`/accounts/${acc.id}`}
+                  className="text-left rounded-xl border border-surface-dim bg-surface p-4 transition-colors hover:border-primary/30 group"
                 >
                   <div className="flex items-center justify-between">
                     <p className="font-medium">{acc.name}</p>
-                    {balance != null && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium flex items-center gap-1">
-                        <Wallet size={10} />
-                        {formatKRW(balance)}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {balance != null && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium flex items-center gap-1">
+                          <Wallet size={10} />
+                          {formatKRW(balance)}
+                        </span>
+                      )}
+                      <ChevronRight size={16} className="text-foreground/30 group-hover:text-foreground/60 transition-colors" />
+                    </div>
                   </div>
                   <div className="flex gap-2 mt-1">
                     <span className="text-xs px-2 py-0.5 rounded-full bg-surface-dim text-foreground/60">
@@ -249,58 +217,15 @@ export default function PortfolioDetailPage() {
                   {acc.broker && (
                     <p className="text-xs text-foreground/60 mt-1">{acc.broker}</p>
                   )}
-                </button>
+                </Link>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* 계좌 선택 시: 기록 입력 + 타임라인 */}
-      {selectedAccount && (
-        <>
-          {/* 기록 추가 버튼 */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground/70">
-                기록 — {accounts.find((a) => a.id === selectedAccount)?.name}
-              </h2>
-              <button
-                onClick={() => setShowSnapshotForm(true)}
-                className="flex items-center gap-1 text-sm text-primary font-medium hover:underline"
-              >
-                <Plus size={14} />
-                새 기록 추가
-              </button>
-            </div>
-          </div>
-
-          {/* 타임라인 뷰 */}
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground/70">
-              기록 타임라인
-            </h2>
-            <AccountTimeline
-              accountId={selectedAccount}
-              refreshKey={refreshKey}
-            />
-          </div>
-        </>
-      )}
-
-      {/* 스냅샷 모달 */}
-      {showSnapshotForm && selectedAccount && (
-        <SnapshotEntryForm
-          accountId={selectedAccount}
-          instruments={instruments}
-          targetAllocations={targetAllocations}
-          onSaved={() => setRefreshKey((k) => k + 1)}
-          onClose={() => setShowSnapshotForm(false)}
-        />
-      )}
-
-      {/* 계좌 미선택 시: 포트폴리오 전체 뷰 */}
-      {!selectedAccount && accounts.length > 0 && (
+      {/* 포트폴리오 전체 뷰 */}
+      {accounts.length > 0 && (
         <>
           {/* 종목 설정 */}
           <InstrumentManager
