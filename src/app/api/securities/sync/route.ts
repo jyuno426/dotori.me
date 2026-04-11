@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { securities, instruments, targetAllocations } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { fetchKrxEtfList } from "@/lib/krx";
@@ -10,8 +10,10 @@ export async function POST() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const db = getDb();
+
   // 1시간 이내 재실행 방지
-  const latest = db
+  const latest = await db
     .select({ maxUpdated: sql<number>`MAX(updated_at)` })
     .from(securities)
     .get();
@@ -34,25 +36,23 @@ export async function POST() {
   const now = Math.floor(Date.now() / 1000);
   let synced = 0;
 
-  db.transaction((tx) => {
-    for (const etf of etfs) {
-      tx.run(
-        sql`INSERT INTO securities (ticker, name, market, asset_class, category, updated_at)
-            VALUES (${etf.ticker}, ${etf.name}, ${etf.market}, ${etf.assetClass}, ${etf.category}, ${now})
-            ON CONFLICT(ticker) DO UPDATE SET
-              name = excluded.name,
-              market = excluded.market,
-              asset_class = excluded.asset_class,
-              category = excluded.category,
-              updated_at = excluded.updated_at`
-      );
-      synced++;
-    }
-  });
+  for (const etf of etfs) {
+    await db.run(
+      sql`INSERT INTO securities (ticker, name, market, asset_class, category, updated_at)
+          VALUES (${etf.ticker}, ${etf.name}, ${etf.market}, ${etf.assetClass}, ${etf.category}, ${now})
+          ON CONFLICT(ticker) DO UPDATE SET
+            name = excluded.name,
+            market = excluded.market,
+            asset_class = excluded.asset_class,
+            category = excluded.category,
+            updated_at = excluded.updated_at`
+    );
+    synced++;
+  }
 
   // instruments 이름 갱신
   let namesUpdated = 0;
-  const outdated = db
+  const outdated = await db
     .select({
       instrumentId: instruments.id,
       newName: securities.name,
@@ -63,7 +63,7 @@ export async function POST() {
     .all();
 
   for (const row of outdated) {
-    db.update(instruments)
+    await db.update(instruments)
       .set({ name: row.newName })
       .where(eq(instruments.id, row.instrumentId))
       .run();
@@ -71,7 +71,7 @@ export async function POST() {
   }
 
   // targetAllocations 이름 갱신
-  const outdatedTargets = db
+  const outdatedTargets = await db
     .select({
       targetId: targetAllocations.id,
       newName: securities.name,
@@ -82,7 +82,7 @@ export async function POST() {
     .all();
 
   for (const row of outdatedTargets) {
-    db.update(targetAllocations)
+    await db.update(targetAllocations)
       .set({ name: row.newName })
       .where(eq(targetAllocations.id, row.targetId))
       .run();

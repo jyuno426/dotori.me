@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { targetAllocations, portfolios } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
@@ -15,14 +15,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "portfolioId가 필요합니다." }, { status: 400 });
   }
 
-  const pf = db
+  const db = getDb();
+  const pf = await db
     .select()
     .from(portfolios)
     .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, session.userId)))
     .get();
   if (!pf) return NextResponse.json({ error: "포트폴리오를 찾을 수 없습니다." }, { status: 404 });
 
-  const rows = db
+  const rows = await db
     .select()
     .from(targetAllocations)
     .where(eq(targetAllocations.portfolioId, portfolioId))
@@ -38,7 +39,8 @@ export async function POST(req: NextRequest) {
 
   const { portfolioId, allocations } = await req.json();
 
-  const pf = db
+  const db = getDb();
+  const pf = await db
     .select()
     .from(portfolios)
     .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, session.userId)))
@@ -55,32 +57,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "목표 비중 합계가 100%가 되어야 합니다." }, { status: 400 });
   }
 
-  // 트랜잭션으로 기존 삭제 + 새로 삽입 (원자적 처리)
-  const rows = db.transaction(() => {
-    db.delete(targetAllocations)
-      .where(eq(targetAllocations.portfolioId, portfolioId))
-      .run();
+  // 기존 삭제 + 새로 삽입
+  await db.delete(targetAllocations)
+    .where(eq(targetAllocations.portfolioId, portfolioId))
+    .run();
 
-    for (const alloc of allocations) {
-      if (alloc.targetPercent > 0) {
-        db.insert(targetAllocations)
-          .values({
-            id: generateId(),
-            portfolioId,
-            ticker: alloc.ticker,
-            name: alloc.name,
-            targetPercent: alloc.targetPercent,
-          })
-          .run();
-      }
+  for (const alloc of allocations) {
+    if (alloc.targetPercent > 0) {
+      await db.insert(targetAllocations)
+        .values({
+          id: generateId(),
+          portfolioId,
+          ticker: alloc.ticker,
+          name: alloc.name,
+          targetPercent: alloc.targetPercent,
+        })
+        .run();
     }
+  }
 
-    return db
-      .select()
-      .from(targetAllocations)
-      .where(eq(targetAllocations.portfolioId, portfolioId))
-      .all();
-  });
+  const rows = await db
+    .select()
+    .from(targetAllocations)
+    .where(eq(targetAllocations.portfolioId, portfolioId))
+    .all();
 
   return NextResponse.json(rows);
 }

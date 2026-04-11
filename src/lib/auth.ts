@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { getDb } from "./db";
 import { users, sessions } from "./db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { generateId } from "./utils";
@@ -10,7 +10,8 @@ function hashPassword(password: string, salt: string): string {
 }
 
 export async function signUp(email: string, password: string, name?: string) {
-  const existing = db.select().from(users).where(eq(users.email, email)).get();
+  const db = getDb();
+  const existing = await db.select().from(users).where(eq(users.email, email)).get();
   if (existing) {
     throw new Error("이미 등록된 이메일입니다.");
   }
@@ -19,7 +20,7 @@ export async function signUp(email: string, password: string, name?: string) {
   const hash = hashPassword(password, salt);
   const id = generateId();
 
-  db.insert(users)
+  await db.insert(users)
     .values({ id, email, name: name ?? null, passwordHash: `${salt}:${hash}` })
     .run();
 
@@ -27,7 +28,8 @@ export async function signUp(email: string, password: string, name?: string) {
 }
 
 export async function signIn(email: string, password: string) {
-  const user = db.select().from(users).where(eq(users.email, email)).get();
+  const db = getDb();
+  const user = await db.select().from(users).where(eq(users.email, email)).get();
   if (!user) {
     throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
   }
@@ -45,10 +47,11 @@ export async function signIn(email: string, password: string) {
 const SESSION_COOKIE = "dotori_session";
 
 export async function createSession(userId: string) {
+  const db = getDb();
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7일
 
-  db.insert(sessions).values({ token, userId, expiresAt }).run();
+  await db.insert(sessions).values({ token, userId, expiresAt }).run();
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
@@ -67,18 +70,19 @@ export async function getSession() {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const session = db
+  const db = getDb();
+  const session = await db
     .select()
     .from(sessions)
     .where(and(eq(sessions.token, token), gt(sessions.expiresAt, Date.now())))
     .get();
 
   if (!session) {
-    db.delete(sessions).where(eq(sessions.token, token)).run();
+    await db.delete(sessions).where(eq(sessions.token, token)).run();
     return null;
   }
 
-  const user = db.select().from(users).where(eq(users.id, session.userId)).get();
+  const user = await db.select().from(users).where(eq(users.id, session.userId)).get();
   if (!user) return null;
 
   return { userId: user.id, email: user.email, name: user.name };
@@ -88,7 +92,8 @@ export async function destroySession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (token) {
-    db.delete(sessions).where(eq(sessions.token, token)).run();
+    const db = getDb();
+    await db.delete(sessions).where(eq(sessions.token, token)).run();
     cookieStore.delete(SESSION_COOKIE);
   }
 }

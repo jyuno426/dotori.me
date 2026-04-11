@@ -6,9 +6,7 @@ import { createRequest, parseResponse } from "../helpers/request";
 let testDb: ReturnType<typeof createTestDb>;
 
 vi.mock("@/lib/db", () => ({
-  get db() {
-    return testDb.db;
-  },
+  getDb: () => testDb.db,
 }));
 
 const loginRoute = await import("@/app/api/auth/login/route");

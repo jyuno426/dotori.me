@@ -12,9 +12,7 @@ import { cookieStore } from "../setup";
 let testDb: ReturnType<typeof createTestDb>;
 
 vi.mock("@/lib/db", () => ({
-  get db() {
-    return testDb.db;
-  },
+  getDb: () => testDb.db,
 }));
 
 // auth 모듈을 db mock 후에 import

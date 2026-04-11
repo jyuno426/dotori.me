@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { accounts, portfolios } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
@@ -14,7 +14,8 @@ export async function GET(
 
   const { id } = await params;
 
-  const row = db
+  const db = getDb();
+  const row = await db
     .select({ account: accounts, portfolio: portfolios })
     .from(accounts)
     .innerJoin(portfolios, eq(accounts.portfolioId, portfolios.id))

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { accountSnapshots, accounts, portfolios } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
 import { eq, and, desc } from "drizzle-orm";
 
 // 계좌 소유권 확인 헬퍼
-function verifyAccountOwnership(accountId: string, userId: string) {
-  return db
+async function verifyAccountOwnership(accountId: string, userId: string) {
+  const db = getDb();
+  return await db
     .select({ account: accounts, portfolio: portfolios })
     .from(accounts)
     .innerJoin(portfolios, eq(accounts.portfolioId, portfolios.id))
@@ -54,11 +55,13 @@ export async function GET(req: NextRequest) {
   const accountId = req.nextUrl.searchParams.get("accountId");
   const portfolioId = req.nextUrl.searchParams.get("portfolioId");
 
+  const db = getDb();
+
   if (accountId) {
-    const owner = verifyAccountOwnership(accountId, session.userId);
+    const owner = await verifyAccountOwnership(accountId, session.userId);
     if (!owner) return NextResponse.json({ error: "계좌를 찾을 수 없습니다." }, { status: 404 });
 
-    const rows = db
+    const rows = await db
       .select()
       .from(accountSnapshots)
       .where(eq(accountSnapshots.accountId, accountId))
@@ -69,14 +72,14 @@ export async function GET(req: NextRequest) {
   }
 
   if (portfolioId) {
-    const pf = db
+    const pf = await db
       .select()
       .from(portfolios)
       .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, session.userId)))
       .get();
     if (!pf) return NextResponse.json({ error: "포트폴리오를 찾을 수 없습니다." }, { status: 404 });
 
-    const rows = db
+    const rows = await db
       .select({ snapshot: accountSnapshots, account: accounts })
       .from(accountSnapshots)
       .innerJoin(accounts, eq(accountSnapshots.accountId, accounts.id))
@@ -98,20 +101,21 @@ export async function POST(req: NextRequest) {
 
   const { accountId, date, holdings, cash, cashFlows, memo } = await req.json();
 
-  const owner = verifyAccountOwnership(accountId, session.userId);
+  const owner = await verifyAccountOwnership(accountId, session.userId);
   if (!owner) return NextResponse.json({ error: "계좌를 찾을 수 없습니다." }, { status: 404 });
 
   if (!date || !Array.isArray(holdings)) {
     return NextResponse.json({ error: "필수 항목을 입력해주세요." }, { status: 400 });
   }
 
+  const db = getDb();
   const holdingsJson = JSON.stringify(holdings);
   const cashFlowsJson = Array.isArray(cashFlows) && cashFlows.length > 0
     ? JSON.stringify(cashFlows)
     : null;
 
   // upsert: 같은 (accountId, date) 존재하면 업데이트
-  const existing = db
+  const existing = await db
     .select()
     .from(accountSnapshots)
     .where(
@@ -123,7 +127,7 @@ export async function POST(req: NextRequest) {
     .get();
 
   if (existing) {
-    db.update(accountSnapshots)
+    await db.update(accountSnapshots)
       .set({
         holdings: holdingsJson,
         cash: cash ?? 0,
@@ -132,12 +136,12 @@ export async function POST(req: NextRequest) {
       })
       .where(eq(accountSnapshots.id, existing.id))
       .run();
-    const updated = db.select().from(accountSnapshots).where(eq(accountSnapshots.id, existing.id)).get();
+    const updated = await db.select().from(accountSnapshots).where(eq(accountSnapshots.id, existing.id)).get();
     return NextResponse.json(updated);
   }
 
   const id = generateId();
-  db.insert(accountSnapshots)
+  await db.insert(accountSnapshots)
     .values({
       id,
       accountId,
@@ -149,7 +153,7 @@ export async function POST(req: NextRequest) {
     })
     .run();
 
-  const row = db.select().from(accountSnapshots).where(eq(accountSnapshots.id, id)).get();
+  const row = await db.select().from(accountSnapshots).where(eq(accountSnapshots.id, id)).get();
   return NextResponse.json(row, { status: 201 });
 }
 
@@ -162,7 +166,8 @@ export async function DELETE(req: NextRequest) {
   if (!snapshotId) return NextResponse.json({ error: "id가 필요합니다." }, { status: 400 });
 
   // 소유권 확인
-  const snap = db
+  const db = getDb();
+  const snap = await db
     .select({ snapshot: accountSnapshots, portfolio: portfolios })
     .from(accountSnapshots)
     .innerJoin(accounts, eq(accountSnapshots.accountId, accounts.id))
@@ -171,6 +176,6 @@ export async function DELETE(req: NextRequest) {
     .get();
   if (!snap) return NextResponse.json({ error: "기록을 찾을 수 없습니다." }, { status: 404 });
 
-  db.delete(accountSnapshots).where(eq(accountSnapshots.id, snapshotId)).run();
+  await db.delete(accountSnapshots).where(eq(accountSnapshots.id, snapshotId)).run();
   return NextResponse.json({ ok: true });
 }

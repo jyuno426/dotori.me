@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { prices } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
@@ -13,8 +13,10 @@ export async function GET(req: NextRequest) {
   const ticker = req.nextUrl.searchParams.get("ticker");
   const tickers = req.nextUrl.searchParams.get("tickers"); // 쉼표 구분
 
+  const db = getDb();
+
   if (ticker) {
-    const row = db
+    const row = await db
       .select()
       .from(prices)
       .where(eq(prices.ticker, ticker))
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
     const tickerList = tickers.split(",").map((t) => t.trim());
     const result: Record<string, { close: number; date: string }> = {};
     for (const t of tickerList) {
-      const row = db
+      const row = await db
         .select()
         .from(prices)
         .where(eq(prices.ticker, t))
@@ -53,25 +55,26 @@ export async function POST(req: NextRequest) {
   // 일괄 입력 지원: { items: [{ticker, date, close}] } 또는 단건 { ticker, date, close }
   const items = Array.isArray(body.items) ? body.items : [body];
 
+  const db = getDb();
   const results = [];
   for (const { ticker, date, close } of items) {
     if (!ticker || !date || close == null) continue;
 
-    const existing = db
+    const existing = await db
       .select()
       .from(prices)
       .where(and(eq(prices.ticker, ticker), eq(prices.date, date)))
       .get();
 
     if (existing) {
-      db.update(prices)
+      await db.update(prices)
         .set({ close })
         .where(eq(prices.id, existing.id))
         .run();
       results.push({ ticker, date, close, updated: true });
     } else {
       const id = generateId();
-      db.insert(prices)
+      await db.insert(prices)
         .values({ id, ticker, date, close })
         .run();
       results.push({ ticker, date, close, created: true });

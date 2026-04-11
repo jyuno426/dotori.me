@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { securities } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { or, like, sql } from "drizzle-orm";
@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
 
   const pattern = `%${q}%`;
 
-  const rows = db
+  const db = getDb();
+  const rows = await db
     .select()
     .from(securities)
     .where(

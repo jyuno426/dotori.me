@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { portfolios } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
@@ -9,7 +9,8 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = db
+  const db = getDb();
+  const rows = await db
     .select()
     .from(portfolios)
     .where(eq(portfolios.userId, session.userId))
@@ -27,11 +28,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "포트폴리오 이름을 입력해주세요." }, { status: 400 });
   }
 
+  const db = getDb();
   const id = generateId();
-  db.insert(portfolios)
+  await db.insert(portfolios)
     .values({ id, userId: session.userId, name, description: description ?? null })
     .run();
 
-  const row = db.select().from(portfolios).where(eq(portfolios.id, id)).get();
+  const row = await db.select().from(portfolios).where(eq(portfolios.id, id)).get();
   return NextResponse.json(row, { status: 201 });
 }

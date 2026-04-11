@@ -1,0 +1,16 @@
+#:schema node_modules/wrangler/config-schema.json
+
+name = "dotori"
+main = ".open-next/worker.js"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = ".open-next/assets"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "dotori-db"
+database_id = "144722a6-233b-4d64-b609-9aa981e7e32c"
+migrations_dir = "migrations"

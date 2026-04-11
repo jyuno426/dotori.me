@@ -11,9 +11,7 @@ import { createRequest, parseResponse } from "../helpers/request";
 let testDb: ReturnType<typeof createTestDb>;
 
 vi.mock("@/lib/db", () => ({
-  get db() {
-    return testDb.db;
-  },
+  getDb: () => testDb.db,
 }));
 
 const searchRoute = await import("@/app/api/securities/search/route");

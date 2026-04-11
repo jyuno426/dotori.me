@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { portfolios, accounts, accountSnapshots, prices } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { eq, and, desc } from "drizzle-orm";
@@ -27,7 +27,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "portfolioId가 필요합니다." }, { status: 400 });
   }
 
-  const pf = db
+  const db = getDb();
+  const pf = await db
     .select()
     .from(portfolios)
     .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, session.userId)))
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
   if (!pf) return NextResponse.json({ error: "포트폴리오를 찾을 수 없습니다." }, { status: 404 });
 
   // 1. 전체 계좌 조회
-  const accs = db
+  const accs = await db
     .select()
     .from(accounts)
     .where(eq(accounts.portfolioId, portfolioId))
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
   let totalDeposit = 0;
   let totalWithdrawal = 0;
   for (const accId of accountIds) {
-    const allSnapshots = db
+    const allSnapshots = await db
       .select()
       .from(accountSnapshots)
       .where(eq(accountSnapshots.accountId, accId))
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
   // 3. 각 계좌별 최신 스냅샷에서 예수금
   let totalCash = 0;
   for (const accId of accountIds) {
-    const latest = db
+    const latest = await db
       .select()
       .from(accountSnapshots)
       .where(eq(accountSnapshots.accountId, accId))
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
   // 4. 각 계좌별 최신 스냅샷에서 보유 종목 평가액
   const allLatestHoldings: HoldingEntry[] = [];
   for (const accId of accountIds) {
-    const latest = db
+    const latest = await db
       .select()
       .from(accountSnapshots)
       .where(eq(accountSnapshots.accountId, accId))
@@ -115,7 +116,7 @@ export async function GET(req: NextRequest) {
   }[] = [];
 
   for (const [ticker, { name, shares }] of tickerShares) {
-    const latestPrice = db
+    const latestPrice = await db
       .select()
       .from(prices)
       .where(eq(prices.ticker, ticker))

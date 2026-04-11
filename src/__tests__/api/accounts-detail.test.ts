@@ -12,9 +12,7 @@ import { NextRequest } from "next/server";
 let testDb: ReturnType<typeof createTestDb>;
 
 vi.mock("@/lib/db", () => ({
-  get db() {
-    return testDb.db;
-  },
+  getDb: () => testDb.db,
 }));
 
 const { GET } = await import("@/app/api/accounts/[id]/route");
