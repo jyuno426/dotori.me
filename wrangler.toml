@@ -4,6 +4,10 @@ name = "dotori"
 main = ".open-next/worker.js"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+routes = [
+  { pattern = "dotori.me", custom_domain = true },
+]
 
 [assets]
 directory = ".open-next/assets"
