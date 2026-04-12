@@ -27,10 +27,15 @@ interface HoldingRow {
 }
 
 const ASSET_CLASS_LABELS: Record<string, string> = {
+  developed_equity: "선진국 주식",
+  emerging_equity: "신흥국 주식",
+  developed_bond: "선진국 채권",
+  emerging_bond: "신흥국 채권",
+  alternative: "대체자산",
+  cash: "현금성",
   domestic_equity: "국내 주식",
   foreign_equity: "해외 주식",
   bond: "채권",
-  alternative: "대안자산",
 };
 
 interface Props {
@@ -55,7 +60,6 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
         return r.json();
       })
       .then((data: Snapshot[]) => {
-        // 각 계좌+종목 조합별 최신 스냅샷에서 보유 종목 추출
         const latest = extractLatestHoldings(data);
         setHoldings(latest);
       })
@@ -63,9 +67,7 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
       .finally(() => setLoading(false));
   }
 
-  // 스냅샷에서 최신 보유 종목 추출 (계좌+종목별 최신 날짜)
   function extractLatestHoldings(snapshots: Snapshot[]): HoldingRow[] {
-    // 계좌별로 최신 스냅샷만 추출
     const latestByAccount = new Map<string, Snapshot>();
     for (const snap of snapshots) {
       const existing = latestByAccount.get(snap.accountId);
@@ -97,9 +99,7 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId, portfolioId, refreshKey]);
 
-  if (loading) {
-    return <div className="animate-pulse text-foreground/60 text-sm py-4">로딩 중...</div>;
-  }
+  if (loading) return null;
 
   if (error) {
     return (
@@ -117,40 +117,67 @@ export function HoldingsTable({ accountId, portfolioId, refreshKey }: Props) {
     );
   }
 
+  // 모바일: 카드 레이아웃, 데스크탑: 테이블 레이아웃
   return (
-    <div className="-mx-4 sm:mx-0 overflow-x-auto rounded-xl border border-surface-dim">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-surface-dim bg-surface-dim/50">
-            <th className="text-left px-4 py-3 font-medium text-foreground/60">종목</th>
-            <th className="text-left px-4 py-3 font-medium text-foreground/60">코드</th>
-            <th className="text-left px-4 py-3 font-medium text-foreground/60">자산군</th>
-            <th className="text-right px-4 py-3 font-medium text-foreground/60">수량</th>
-            <th className="text-left px-4 py-3 font-medium text-foreground/60">기준일</th>
-            {portfolioId && (
-              <th className="text-left px-4 py-3 font-medium text-foreground/60">계좌</th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {holdings.map((h, idx) => (
-            <tr key={`${h.ticker}-${idx}`} className="border-b border-surface-dim last:border-0 hover:bg-surface-dim/30">
-              <td className="px-4 py-3 font-medium">{h.name}</td>
-              <td className="px-4 py-3 text-foreground/60 font-mono text-xs">{h.ticker}</td>
-              <td className="px-4 py-3">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-surface-dim text-foreground/60">
-                  {ASSET_CLASS_LABELS[h.assetClass ?? ""] || h.assetClass || "-"}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-right font-mono">{h.amount}</td>
-              <td className="px-4 py-3 text-foreground/60 text-xs">{h.date}</td>
+    <>
+      {/* 데스크탑 테이블 */}
+      <div className="hidden sm:block rounded-xl border border-surface-dim overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-surface-dim bg-surface-dim/50">
+              <th className="text-left px-4 py-3 font-medium text-foreground/60">종목</th>
+              <th className="text-left px-4 py-3 font-medium text-foreground/60">자산군</th>
+              <th className="text-right px-4 py-3 font-medium text-foreground/60">수량</th>
+              <th className="text-left px-4 py-3 font-medium text-foreground/60">기준일</th>
               {portfolioId && (
-                <td className="px-4 py-3 text-foreground/60 text-xs">{h.accountName}</td>
+                <th className="text-left px-4 py-3 font-medium text-foreground/60">계좌</th>
               )}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {holdings.map((h, idx) => (
+              <tr key={`${h.ticker}-${idx}`} className="border-b border-surface-dim last:border-0 hover:bg-surface-dim/30">
+                <td className="px-4 py-3">
+                  <span className="font-medium">{h.name}</span>
+                  <span className="text-xs text-foreground/50 font-mono ml-1.5">{h.ticker}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface-dim text-foreground/60">
+                    {ASSET_CLASS_LABELS[h.assetClass ?? ""] || h.assetClass || "-"}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right font-mono">{h.amount}</td>
+                <td className="px-4 py-3 text-foreground/60 text-xs">{h.date}</td>
+                {portfolioId && (
+                  <td className="px-4 py-3 text-foreground/60 text-xs">{h.accountName}</td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 모바일 카드 */}
+      <div className="sm:hidden space-y-2">
+        {holdings.map((h, idx) => (
+          <div key={`${h.ticker}-${idx}`} className="rounded-lg border border-surface-dim bg-surface p-3">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <span className="text-sm font-medium">{h.name}</span>
+                <span className="text-xs text-foreground/50 font-mono ml-1">{h.ticker}</span>
+              </div>
+              <span className="text-sm font-mono shrink-0 ml-2">{h.amount}주</span>
+            </div>
+            <div className="flex items-center gap-2 mt-1.5 text-xs text-foreground/50">
+              <span className="px-1.5 py-0.5 rounded-full bg-surface-dim">
+                {ASSET_CLASS_LABELS[h.assetClass ?? ""] || h.assetClass || "-"}
+              </span>
+              <span>{h.date}</span>
+              {portfolioId && h.accountName && <span>{h.accountName}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

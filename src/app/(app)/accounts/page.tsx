@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Building2, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useLoading } from "@/components/ui/loading-overlay";
 
 interface Account {
   id: string;
@@ -21,15 +22,18 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function AccountsPage() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<Account[] | null>(null);
+  const { showLoading, hideLoading } = useLoading();
 
   useEffect(() => {
+    showLoading();
     fetch("/api/accounts")
       .then((r) => r.json())
       .then(setAccounts)
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => hideLoading());
+  }, [showLoading, hideLoading]);
+
+  if (!accounts) return null;
 
   return (
     <div className="space-y-6">
@@ -44,9 +48,7 @@ export default function AccountsPage() {
         </Link>
       </div>
 
-      {loading ? (
-        <div className="animate-pulse text-foreground/60">로딩 중...</div>
-      ) : accounts.length === 0 ? (
+      {accounts.length === 0 ? (
         <div className="text-center py-16 text-foreground/60">
           <Building2 size={40} className="mx-auto mb-3 text-foreground/60" />
           <p>등록된 계좌가 없습니다.</p>

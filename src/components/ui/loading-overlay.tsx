@@ -1,51 +1,66 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 
-export function LoadingOverlay() {
+interface LoadingContextType {
+  showLoading: () => void;
+  hideLoading: () => void;
+}
+
+const LoadingContext = createContext<LoadingContextType>({
+  showLoading: () => {},
+  hideLoading: () => {},
+});
+
+export function useLoading() {
+  return useContext(LoadingContext);
+}
+
+export function LoadingProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState(false);
+  const [count, setCount] = useState(0);
   const [prevPathname, setPrevPathname] = useState(pathname);
 
+  // 라우트 전환 완료 시 로딩 해제
   useEffect(() => {
     if (pathname !== prevPathname) {
       setPrevPathname(pathname);
-      setIsLoading(false);
+      setCount(0);
     }
   }, [pathname, prevPathname]);
 
-  // 네비게이션 이벤트 감지 — 링크 클릭 시 로딩 시작
+  // 네비게이션 클릭 감지
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       const anchor = (e.target as HTMLElement).closest("a");
       if (!anchor) return;
-
       const href = anchor.getAttribute("href");
       if (!href || href.startsWith("http") || href.startsWith("#") || href === pathname) return;
-
-      // 같은 앱 내 네비게이션인 경우 로딩 시작
-      setIsLoading(true);
+      setCount((c) => c + 1);
     }
-
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, [pathname]);
 
-  // 3초 타임아웃 — 안전장치
-  useEffect(() => {
-    if (!isLoading) return;
-    const timer = setTimeout(() => setIsLoading(false), 3000);
-    return () => clearTimeout(timer);
-  }, [isLoading]);
+  const showLoading = useCallback(() => setCount((c) => c + 1), []);
+  const hideLoading = useCallback(() => setCount((c) => Math.max(0, c - 1)), []);
 
-  if (!isLoading) return null;
+  // 5초 안전장치
+  useEffect(() => {
+    if (count <= 0) return;
+    const timer = setTimeout(() => setCount(0), 5000);
+    return () => clearTimeout(timer);
+  }, [count]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent" />
-      </div>
-    </div>
+    <LoadingContext.Provider value={{ showLoading, hideLoading }}>
+      {children}
+      {count > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+        </div>
+      )}
+    </LoadingContext.Provider>
   );
 }

@@ -3,19 +3,28 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, ListChecks, Save, Check } from "lucide-react";
 import { SecuritySearch } from "@/components/ui/security-search";
+import { useLoading } from "@/components/ui/loading-overlay";
 
 const DEFAULT_ASSET_CLASSES = [
-  { value: "domestic_equity", label: "국내 주식" },
-  { value: "foreign_equity", label: "해외 주식" },
-  { value: "bond", label: "채권" },
-  { value: "alternative", label: "대안자산" },
+  { value: "developed_equity", label: "선진국 주식" },
+  { value: "emerging_equity", label: "신흥국 주식" },
+  { value: "developed_bond", label: "선진국 채권" },
+  { value: "emerging_bond", label: "신흥국 채권" },
+  { value: "alternative", label: "대체자산" },
+  { value: "cash", label: "현금성" },
 ];
 
 const ASSET_CLASS_LABELS: Record<string, string> = {
+  developed_equity: "선진국 주식",
+  emerging_equity: "신흥국 주식",
+  developed_bond: "선진국 채권",
+  emerging_bond: "신흥국 채권",
+  alternative: "대체자산",
+  cash: "현금성",
+  // 하위 호환
   domestic_equity: "국내 주식",
   foreign_equity: "해외 주식",
   bond: "채권",
-  alternative: "대안자산",
 };
 
 interface Instrument {
@@ -42,6 +51,7 @@ export function InstrumentManager({ portfolioId, instruments, onChanged }: Props
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { showLoading, hideLoading } = useLoading();
 
   // 검색으로 선택한 종목의 자산군을 수정할 수 있도록
   const [pendingSecurity, setPendingSecurity] = useState<{
@@ -120,8 +130,10 @@ export function InstrumentManager({ portfolioId, instruments, onChanged }: Props
 
   async function handleDelete(id: string) {
     if (!confirm("이 종목을 삭제하시겠습니까?")) return;
+    showLoading();
     await fetch(`/api/instruments?id=${id}`, { method: "DELETE" });
     onChanged();
+    hideLoading();
   }
 
   // 비중 저장
@@ -316,11 +328,12 @@ export function InstrumentManager({ portfolioId, instruments, onChanged }: Props
                   min="0"
                   max="100"
                   step="0.1"
-                  value={targetValues[inst.ticker] ?? ""}
-                  onChange={(e) =>
-                    setTargetValues((v) => ({ ...v, [inst.ticker]: Number(e.target.value) || 0 }))
-                  }
-                  placeholder="0"
+                  value={targetValues[inst.ticker] || ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setTargetValues((v) => ({ ...v, [inst.ticker]: raw === "" ? 0 : Number(raw) }));
+                  }}
+                  placeholder=""
                   className="w-full rounded border border-surface-dim px-2 py-1 text-sm text-right focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50"
                 />
                 <span className="text-xs text-foreground/50">%</span>

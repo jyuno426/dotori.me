@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Plus, ArrowLeft, Wallet } from "lucide-react";
+import { Plus, ArrowLeft, Wallet, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SnapshotEntryForm } from "@/components/portfolio/snapshot-entry-form";
 import { AccountTimeline } from "@/components/portfolio/account-timeline";
 import { formatKRW } from "@/lib/utils";
+import { useLoading } from "@/components/ui/loading-overlay";
 
 interface AccountDetail {
   id: string;
@@ -51,6 +53,8 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 
 export default function AccountDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const { showLoading, hideLoading } = useLoading();
   const [account, setAccount] = useState<AccountDetail | null>(null);
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [targetAllocations, setTargetAllocations] = useState<TargetAllocation[]>([]);
@@ -64,6 +68,7 @@ export default function AccountDetailPage() {
 
   // 계좌 정보 로드
   useEffect(() => {
+    showLoading();
     fetch(`/api/accounts/${params.id}`)
       .then((r) => {
         if (!r.ok) throw new Error();
@@ -81,8 +86,9 @@ export default function AccountDetailPage() {
         setInstruments(insts);
         setTargetAllocations(allocs);
       })
-      .catch(() => setError("계좌 정보를 불러오는데 실패했습니다."));
-  }, [params.id]);
+      .catch(() => setError("계좌 정보를 불러오는데 실패했습니다."))
+      .finally(() => hideLoading());
+  }, [params.id, showLoading, hideLoading]);
 
   // 최신 예수금 로드
   useEffect(() => {
@@ -118,9 +124,19 @@ export default function AccountDetailPage() {
     );
   }
 
-  if (!account) {
-    return <div className="animate-pulse text-foreground/60">로딩 중...</div>;
+  async function handleDeleteAccount() {
+    if (!confirm("이 계좌를 삭제하시겠습니까? 모든 기록이 함께 삭제됩니다.")) return;
+    showLoading();
+    const res = await fetch(`/api/accounts/${params.id}`, { method: "DELETE" });
+    hideLoading();
+    if (res.ok) {
+      router.push(account ? `/portfolios/${account.portfolioId}` : "/accounts");
+    } else {
+      alert("계좌 삭제에 실패했습니다.");
+    }
   }
+
+  if (!account && !error) return null;
 
   return (
     <div className="space-y-6">
@@ -151,13 +167,22 @@ export default function AccountDetailPage() {
               )}
             </div>
           </div>
-          <button
-            onClick={() => setShowSnapshotForm(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
-          >
-            <Plus size={14} />
-            새 기록 추가
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDeleteAccount}
+              className="flex items-center gap-1.5 rounded-lg border border-danger/30 px-3 py-2 text-sm font-medium text-danger hover:bg-danger/5 transition-colors"
+            >
+              <Trash2 size={14} />
+              삭제
+            </button>
+            <button
+              onClick={() => setShowSnapshotForm(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
+            >
+              <Plus size={14} />
+              새 기록 추가
+            </button>
+          </div>
         </div>
       </div>
 

@@ -15,7 +15,7 @@ vi.mock("@/lib/db", () => ({
   getDb: () => testDb.db,
 }));
 
-const { GET } = await import("@/app/api/accounts/[id]/route");
+const { GET, DELETE } = await import("@/app/api/accounts/[id]/route");
 
 function createGetRequest(id: string) {
   const req = new NextRequest(new URL(`http://localhost:3000/api/accounts/${id}`));
@@ -91,6 +91,31 @@ describe("/api/accounts/[id]", () => {
 
     const { req, params } = createGetRequest("other-account");
     const res = await GET(req, { params });
+    expect(res.status).toBe(404);
+  });
+
+  it("계좌를 삭제한다", async () => {
+    authenticate();
+    const { req, params } = createGetRequest("test-account-1");
+    const res = await DELETE(req, { params });
+    expect(res.status).toBe(200);
+
+    // 삭제 후 조회 시 404
+    const { req: req2, params: params2 } = createGetRequest("test-account-1");
+    const res2 = await GET(req2, { params: params2 });
+    expect(res2.status).toBe(404);
+  });
+
+  it("인증 없이 삭제하면 401을 반환한다", async () => {
+    const { req, params } = createGetRequest("test-account-1");
+    const res = await DELETE(req, { params });
+    expect(res.status).toBe(401);
+  });
+
+  it("존재하지 않는 계좌 삭제 시 404를 반환한다", async () => {
+    authenticate();
+    const { req, params } = createGetRequest("nonexistent");
+    const res = await DELETE(req, { params });
     expect(res.status).toBe(404);
   });
 });

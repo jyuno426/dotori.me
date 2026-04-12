@@ -4,13 +4,19 @@ import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 const ASSET_CLASS_LABELS: Record<string, string> = {
+  developed_equity: "선진국 주식",
+  emerging_equity: "신흥국 주식",
+  developed_bond: "선진국 채권",
+  emerging_bond: "신흥국 채권",
+  alternative: "대체자산",
+  cash: "현금성",
+  // 하위 호환
   domestic_equity: "국내 주식",
   foreign_equity: "해외 주식",
   bond: "채권",
-  alternative: "대안자산",
 };
 
-const COLORS = ["#4f7942", "#6b9f5b", "#d4a574", "#8b6f47", "#a0a0a0"];
+const COLORS = ["#4f7942", "#6b9f5b", "#d4a574", "#8b6f47", "#a0a0a0", "#c9b896", "#7b9e6c", "#b8956a"];
 
 interface Holding {
   ticker: string;
@@ -59,16 +65,21 @@ export function AllocationChart({ portfolioIds }: Props) {
     );
   }
 
-  const assetClassCounts = holdings.reduce(
-    (acc, h) => {
-      const cls = h.assetClass ?? "unknown";
-      acc[cls] = (acc[cls] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  // 자산군별 종목 그룹핑
+  const groups: Record<string, { count: number; items: { name: string; amount: number }[] }> = {};
+  for (const h of holdings) {
+    const cls = h.assetClass && h.assetClass.trim() ? h.assetClass : "미분류";
+    if (!groups[cls]) groups[cls] = { count: 0, items: [] };
+    groups[cls].count += 1;
+    const existing = groups[cls].items.find((i) => i.name === h.name);
+    if (existing) {
+      existing.amount += h.amount;
+    } else {
+      groups[cls].items.push({ name: h.name, amount: h.amount });
+    }
+  }
 
-  const chartData = Object.entries(assetClassCounts).map(([key, count]) => ({
+  const chartData = Object.entries(groups).map(([key, { count }]) => ({
     name: ASSET_CLASS_LABELS[key] || key,
     value: count,
   }));
@@ -98,6 +109,33 @@ export function AllocationChart({ portfolioIds }: Props) {
             <Legend />
           </PieChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* 자산군별 개별 종목 분포 */}
+      <div className="mt-4 space-y-3">
+        {Object.entries(groups).map(([key, { items }], gi) => (
+          <div key={key}>
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="w-3 h-3 rounded-full shrink-0"
+                style={{ backgroundColor: COLORS[gi % COLORS.length] }}
+              />
+              <span className="text-xs font-medium text-foreground/70">
+                {ASSET_CLASS_LABELS[key] || key} ({items.length}종목)
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1 ml-5">
+              {items.map((item) => (
+                <span
+                  key={item.name}
+                  className="text-xs px-2 py-0.5 rounded-full bg-surface-dim text-foreground/60"
+                >
+                  {item.name} {item.amount}주
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

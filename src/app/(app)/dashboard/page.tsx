@@ -7,6 +7,7 @@ import { AllocationChart } from "@/components/dashboard/allocation-chart";
 import { PortfolioSummaryCard } from "@/components/dashboard/portfolio-summary-card";
 import { formatKRW, formatPercent } from "@/lib/utils";
 import { AcornIcon } from "@/components/ui/acorn-icon";
+import { useLoading } from "@/components/ui/loading-overlay";
 
 interface Portfolio {
   id: string;
@@ -21,12 +22,13 @@ interface ReturnData {
 }
 
 export default function DashboardPage() {
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [portfolios, setPortfolios] = useState<Portfolio[] | null>(null);
   const [totalReturn, setTotalReturn] = useState<ReturnData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { showLoading, hideLoading } = useLoading();
 
   useEffect(() => {
+    showLoading();
     fetch("/api/portfolios")
       .then((r) => {
         if (!r.ok) throw new Error();
@@ -34,7 +36,6 @@ export default function DashboardPage() {
       })
       .then((pfs: Portfolio[]) => {
         setPortfolios(pfs);
-        // 전체 수익률 집계
         if (pfs.length > 0) {
           Promise.all(
             pfs.map((p) =>
@@ -55,16 +56,10 @@ export default function DashboardPage() {
         }
       })
       .catch(() => setError("데이터를 불러오는데 실패했습니다."))
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => hideLoading());
+  }, [showLoading, hideLoading]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-foreground/60">로딩 중...</div>
-      </div>
-    );
-  }
+  if (!portfolios && !error) return null;
 
   if (error) {
     return (
@@ -80,7 +75,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (portfolios.length === 0) {
+  if (portfolios!.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
         <AcornIcon className="w-16 h-16" />

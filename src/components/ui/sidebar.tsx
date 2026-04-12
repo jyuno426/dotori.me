@@ -8,6 +8,7 @@ import {
   Building2,
   ArrowRightLeft,
   Settings,
+  User,
 } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -21,13 +22,13 @@ const NAV_ITEMS = [
   { href: "/settings", label: "설정", icon: Settings },
 ];
 
-export function Sidebar({
-  open,
-  onClose,
-}: {
+interface SidebarProps {
   open: boolean;
   onClose: () => void;
-}) {
+  user?: { email: string; name: string | null } | null;
+}
+
+export function Sidebar({ open, onClose, user }: SidebarProps) {
   const pathname = usePathname();
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export function Sidebar({
           !open && "-translate-x-full"
         )}
       >
-        {/* 로고 — 클릭 시 대시보드 이동 */}
+        {/* 로고 */}
         <Link
           href="/dashboard"
           onClick={onClose}
@@ -88,6 +89,18 @@ export function Sidebar({
             );
           })}
         </nav>
+
+        {/* 프로필 */}
+        {user && (
+          <Link
+            href="/settings"
+            onClick={onClose}
+            className="flex items-center gap-2 px-4 py-3 border-t border-surface-dim text-sm text-foreground/70 hover:bg-surface-dim/30 transition-colors"
+          >
+            <User size={16} />
+            <span className="truncate">{user.name ?? user.email}</span>
+          </Link>
+        )}
       </aside>
     </>
   );
