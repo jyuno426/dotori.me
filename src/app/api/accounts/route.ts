@@ -55,17 +55,20 @@ export async function POST(req: NextRequest) {
     .get();
   if (!pf) return NextResponse.json({ error: "포트폴리오를 찾을 수 없습니다." }, { status: 404 });
 
-  if (!name || !accountType) {
-    return NextResponse.json({ error: "필수 항목을 입력해주세요." }, { status: 400 });
+  if (!broker || !accountType) {
+    return NextResponse.json({ error: "증권사와 계좌 유형은 필수입니다." }, { status: 400 });
   }
+
+  // 별칭이 없으면 "증권사 + 계좌유형" 으로 자동 생성
+  const accountName = name || `${broker} ${accountType.toUpperCase()}`;
 
   const id = generateId();
   await db.insert(accounts)
     .values({
       id,
       portfolioId,
-      name,
-      broker: broker ?? null,
+      name: accountName,
+      broker,
       accountType,
       owner: owner ?? null,
     })

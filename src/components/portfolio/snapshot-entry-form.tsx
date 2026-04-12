@@ -23,12 +23,35 @@ interface CashFlowRow {
   memo: string;
 }
 
+interface HoldingEntry {
+  ticker: string;
+  name: string;
+  assetClass: string;
+  amount: number;
+}
+
+interface CashFlowEntry {
+  flowType: string;
+  amount: number;
+  memo?: string;
+}
+
+interface EditData {
+  id: string;
+  date: string;
+  holdings: string; // JSON
+  cash: number;
+  cashFlows: string | null; // JSON
+  memo: string | null;
+}
+
 interface Props {
   accountId: string;
   instruments: Instrument[];
   targetAllocations: TargetAllocation[];
   onSaved: () => void;
   onClose: () => void;
+  editData?: EditData | null; // 수정 모드 시 기존 데이터
 }
 
 let cashFlowKeyCounter = 0;
@@ -39,13 +62,49 @@ export function SnapshotEntryForm({
   targetAllocations,
   onSaved,
   onClose,
+  editData,
 }: Props) {
   const today = new Date().toISOString().split("T")[0];
-  const [date, setDate] = useState(today);
-  const [holdings, setHoldings] = useState<Record<string, string>>({});
-  const [cashAmount, setCashAmount] = useState("");
-  const [cashFlows, setCashFlows] = useState<CashFlowRow[]>([]);
-  const [memo, setMemo] = useState("");
+
+  // 수정 모드 시 기존 데이터로 초기화
+  const isEdit = !!editData;
+
+  const [date, setDate] = useState(() => {
+    if (editData) return editData.date;
+    return today;
+  });
+
+  const [holdings, setHoldings] = useState<Record<string, string>>(() => {
+    if (editData) {
+      const parsed: HoldingEntry[] = JSON.parse(editData.holdings);
+      const map: Record<string, string> = {};
+      for (const h of parsed) {
+        map[h.ticker] = String(h.amount);
+      }
+      return map;
+    }
+    return {};
+  });
+
+  const [cashAmount, setCashAmount] = useState(() => {
+    if (editData && editData.cash > 0) return String(editData.cash);
+    return "";
+  });
+
+  const [cashFlows, setCashFlows] = useState<CashFlowRow[]>(() => {
+    if (editData?.cashFlows) {
+      const parsed: CashFlowEntry[] = JSON.parse(editData.cashFlows);
+      return parsed.map((cf) => ({
+        key: `cf-${++cashFlowKeyCounter}`,
+        flowType: cf.flowType as "deposit" | "withdrawal",
+        amount: String(cf.amount),
+        memo: cf.memo || "",
+      }));
+    }
+    return [];
+  });
+
+  const [memo, setMemo] = useState(() => editData?.memo || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -146,7 +205,7 @@ export function SnapshotEntryForm({
       <div className="bg-surface rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-dim sticky top-0 bg-surface rounded-t-2xl z-10">
-          <h2 className="text-lg font-bold">새 기록 추가</h2>
+          <h2 className="text-lg font-bold">{isEdit ? "기록 수정" : "새 기록 추가"}</h2>
           <button
             onClick={onClose}
             className="p-2 text-foreground/60 hover:text-foreground transition-colors rounded-lg"
@@ -164,8 +223,12 @@ export function SnapshotEntryForm({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+              disabled={isEdit}
+              className="w-full rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-60"
             />
+            {isEdit && (
+              <p className="text-xs text-foreground/50 mt-1">날짜는 수정할 수 없습니다. 다른 날짜에 기록하려면 새로 추가해주세요.</p>
+            )}
           </div>
 
           {/* 보유 수량 */}
@@ -296,6 +359,12 @@ export function SnapshotEntryForm({
             />
           </div>
 
+          {!isEdit && (
+            <p className="text-xs text-foreground/50">
+              같은 날짜의 기록이 이미 있으면 해당 기록이 업데이트됩니다.
+            </p>
+          )}
+
           {error && <p className="text-sm text-danger">{error}</p>}
         </div>
 
@@ -314,7 +383,7 @@ export function SnapshotEntryForm({
             disabled={loading}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
-            {loading ? "저장 중..." : "추가"}
+            {loading ? "저장 중..." : isEdit ? "수정" : "추가"}
           </button>
         </div>
       </div>

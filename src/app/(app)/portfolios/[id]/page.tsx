@@ -5,11 +5,9 @@ import { useParams } from "next/navigation";
 import { Plus, Building2, Wallet, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { HoldingsTable } from "@/components/portfolio/holdings-table";
-import { TargetAllocationForm } from "@/components/portfolio/target-allocation-form";
-import { DriftChart } from "@/components/portfolio/drift-chart";
 import { ReturnSummary } from "@/components/portfolio/return-summary";
-import { PriceInputForm } from "@/components/portfolio/price-input-form";
 import { InstrumentManager } from "@/components/portfolio/instrument-manager";
+import { DriftChart } from "@/components/portfolio/drift-chart";
 import { formatKRW } from "@/lib/utils";
 
 interface Portfolio {
@@ -32,14 +30,6 @@ interface Snapshot {
   cash: number;
 }
 
-interface ReturnHolding {
-  ticker: string;
-  name: string;
-  shares: number;
-  price: number | null;
-  value: number;
-}
-
 interface Instrument {
   id: string;
   portfolioId: string;
@@ -60,15 +50,11 @@ export default function PortfolioDetailPage() {
   const params = useParams<{ id: string }>();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [showPriceInput, setShowPriceInput] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState("");
 
   // 계좌별 최신 예수금
   const [cashByAccount, setCashByAccount] = useState<Record<string, number>>({});
-
-  // 수익률 데이터의 holdingDetails (가격 입력용)
-  const [holdingDetails, setHoldingDetails] = useState<ReturnHolding[]>([]);
 
   // 포트폴리오 종목 설정
   const [instruments, setInstruments] = useState<Instrument[]>([]);
@@ -123,17 +109,6 @@ export default function PortfolioDetailPage() {
         return r.json();
       })
       .then(setInstruments)
-      .catch(() => {});
-  }, [params.id, refreshKey]);
-
-  // 수익률 데이터에서 holdingDetails 추출
-  useEffect(() => {
-    fetch(`/api/returns?portfolioId=${params.id}`)
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
-      .then((data) => setHoldingDetails(data.holdingDetails ?? []))
       .catch(() => {});
   }, [params.id, refreshKey]);
 
@@ -224,65 +199,27 @@ export default function PortfolioDetailPage() {
         )}
       </div>
 
-      {/* 포트폴리오 전체 뷰 */}
+      {/* 종목 설정 — 계좌 없이도 항상 표시 */}
+      <InstrumentManager
+        portfolioId={params.id}
+        instruments={instruments}
+        onChanged={() => setRefreshKey((k) => k + 1)}
+      />
+
+      {/* 드리프트 차트 */}
+      <DriftChart portfolioId={params.id} refreshKey={refreshKey} />
+
+      {/* 전체 보유 종목 — 계좌가 있을 때만 */}
       {accounts.length > 0 && (
-        <>
-          {/* 종목 설정 */}
-          <InstrumentManager
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground/70">
+            전체 보유 종목
+          </h2>
+          <HoldingsTable
             portfolioId={params.id}
-            instruments={instruments}
-            onChanged={() => setRefreshKey((k) => k + 1)}
+            refreshKey={refreshKey}
           />
-
-          {/* 종목별 현재가 입력 */}
-          {instruments.length > 0 && (
-            <div className="space-y-3">
-              <button
-                onClick={() => setShowPriceInput(!showPriceInput)}
-                className="text-sm text-primary font-medium hover:underline"
-              >
-                {showPriceInput ? "현재가 입력 닫기" : "종목별 현재가 입력"}
-              </button>
-              {showPriceInput && (
-                <PriceInputForm
-                  portfolioId={params.id}
-                  holdings={instruments.map((inst) => {
-                    const detail = holdingDetails.find((h) => h.ticker === inst.ticker);
-                    return {
-                      ticker: inst.ticker,
-                      name: inst.name,
-                      shares: detail?.shares ?? 0,
-                      price: detail?.price ?? null,
-                      value: detail?.value ?? 0,
-                    };
-                  })}
-                  onSaved={() => setRefreshKey((k) => k + 1)}
-                />
-              )}
-            </div>
-          )}
-
-          {/* 목표 비중 설정 */}
-          <TargetAllocationForm
-            portfolioId={params.id}
-            holdings={instruments.map((inst) => ({ ticker: inst.ticker, name: inst.name }))}
-            onSaved={() => setRefreshKey((k) => k + 1)}
-          />
-
-          {/* 드리프트 차트 */}
-          <DriftChart portfolioId={params.id} refreshKey={refreshKey} />
-
-          {/* 전체 보유 종목 */}
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground/70">
-              전체 보유 종목
-            </h2>
-            <HoldingsTable
-              portfolioId={params.id}
-              refreshKey={refreshKey}
-            />
-          </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { LoadingOverlay } from "./loading-overlay";
 
 interface AppShellProps {
   user: { email: string; name: string | null } | null;
@@ -24,6 +25,7 @@ export function AppShell({ user, children }: AppShellProps) {
           {children}
         </main>
       </div>
+      <LoadingOverlay />
     </div>
   );
 }

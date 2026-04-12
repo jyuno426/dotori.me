@@ -33,8 +33,12 @@ interface TargetAllocation {
 
 interface Snapshot {
   id: string;
+  accountId: string;
   date: string;
+  holdings: string;
   cash: number;
+  cashFlows: string | null;
+  memo: string | null;
 }
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -51,6 +55,7 @@ export default function AccountDetailPage() {
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [targetAllocations, setTargetAllocations] = useState<TargetAllocation[]>([]);
   const [showSnapshotForm, setShowSnapshotForm] = useState(false);
+  const [editSnapshot, setEditSnapshot] = useState<Snapshot | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState("");
 
@@ -94,6 +99,10 @@ export default function AccountDetailPage() {
       })
       .catch(() => {});
   }, [params.id, refreshKey]);
+
+  function handleEdit(snapshot: Snapshot) {
+    setEditSnapshot(snapshot);
+  }
 
   if (error) {
     return (
@@ -155,10 +164,14 @@ export default function AccountDetailPage() {
       {/* 기록 타임라인 */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground/70">기록 타임라인</h2>
-        <AccountTimeline accountId={params.id} refreshKey={refreshKey} />
+        <AccountTimeline
+          accountId={params.id}
+          refreshKey={refreshKey}
+          onEdit={handleEdit}
+        />
       </div>
 
-      {/* 스냅샷 모달 */}
+      {/* 새 기록 모달 */}
       {showSnapshotForm && (
         <SnapshotEntryForm
           accountId={params.id}
@@ -166,6 +179,18 @@ export default function AccountDetailPage() {
           targetAllocations={targetAllocations}
           onSaved={() => setRefreshKey((k) => k + 1)}
           onClose={() => setShowSnapshotForm(false)}
+        />
+      )}
+
+      {/* 수정 모달 */}
+      {editSnapshot && (
+        <SnapshotEntryForm
+          accountId={params.id}
+          instruments={instruments}
+          targetAllocations={targetAllocations}
+          editData={editSnapshot}
+          onSaved={() => setRefreshKey((k) => k + 1)}
+          onClose={() => setEditSnapshot(null)}
         />
       )}
     </div>

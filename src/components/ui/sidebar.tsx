@@ -56,11 +56,15 @@ export function Sidebar({
           !open && "-translate-x-full"
         )}
       >
-        {/* 로고 */}
-        <div className="flex items-center gap-2 px-4 py-4 border-b border-surface-dim">
+        {/* 로고 — 클릭 시 대시보드 이동 */}
+        <Link
+          href="/dashboard"
+          onClick={onClose}
+          className="flex items-center gap-2 px-4 py-4 border-b border-surface-dim hover:bg-surface-dim/30 transition-colors"
+        >
           <AcornIcon className="w-7 h-7" />
           <span className="font-bold text-lg text-primary-dark">도토리</span>
-        </div>
+        </Link>
 
         {/* 네비게이션 */}
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -84,11 +88,6 @@ export function Sidebar({
             );
           })}
         </nav>
-
-        {/* 하단 */}
-        <div className="px-4 py-4 border-t border-surface-dim text-xs text-foreground/60">
-          한 알씩 모아, 단단한 내일로
-        </div>
       </aside>
     </>
   );

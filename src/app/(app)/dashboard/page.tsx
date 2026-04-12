@@ -86,7 +86,7 @@ export default function DashboardPage() {
         <AcornIcon className="w-16 h-16" />
         <h1 className="text-xl font-semibold">포트폴리오를 만들어보세요</h1>
         <p className="text-foreground/60 text-sm text-center max-w-sm">
-          다계좌를 하나의 포트폴리오로 통합하여 비중 분석과 리밸런싱을 시작하세요.
+          나만의 포트폴리오를 만들고, 자산 현황을 한눈에 확인하세요.
         </p>
         <Link
           href="/portfolios/new"

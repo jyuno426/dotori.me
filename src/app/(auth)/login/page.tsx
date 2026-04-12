@@ -42,7 +42,7 @@ export default function LoginPage() {
           <AcornIcon className="w-12 h-12 mx-auto" />
           <h1 className="mt-2 text-2xl font-bold text-primary-dark">도토리</h1>
           <p className="mt-1 text-sm text-foreground/60">
-            한 알씩 모아, 단단한 내일로
+            ETF 자산배분 포트폴리오 관리
           </p>
         </div>
 

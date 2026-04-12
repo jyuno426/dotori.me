@@ -19,6 +19,36 @@ export async function GET(req: NextRequest) {
   const pattern = `%${q}%`;
 
   const db = getDb();
+
+  // 테이블에 데이터가 있는지 빠르게 확인
+  const count = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(securities)
+    .get();
+
+  // 데이터가 없으면 자동 동기화 시도
+  if (!count || count.cnt === 0) {
+    try {
+      const { fetchKrxEtfList } = await import("@/lib/krx");
+      const etfs = await fetchKrxEtfList();
+      const now = Math.floor(Date.now() / 1000);
+      for (const etf of etfs) {
+        await db.run(
+          sql`INSERT INTO securities (ticker, name, market, asset_class, category, updated_at)
+              VALUES (${etf.ticker}, ${etf.name}, ${etf.market}, ${etf.assetClass}, ${etf.category}, ${now})
+              ON CONFLICT(ticker) DO UPDATE SET
+                name = excluded.name,
+                market = excluded.market,
+                asset_class = excluded.asset_class,
+                category = excluded.category,
+                updated_at = excluded.updated_at`
+        );
+      }
+    } catch {
+      // sync 실패해도 검색은 계속 진행
+    }
+  }
+
   const rows = await db
     .select()
     .from(securities)

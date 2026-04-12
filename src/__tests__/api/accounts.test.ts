@@ -89,21 +89,35 @@ describe("/api/accounts", () => {
       expect(body.accountType).toBe("brokerage");
     });
 
-    it("필수 필드 누락 시 400을 반환한다", async () => {
+    it("증권사 누락 시 400을 반환한다", async () => {
       authenticate();
       const req = createRequest("POST", "/api/accounts", {
         portfolioId: "test-portfolio-1",
         name: "계좌",
+        accountType: "irp",
       });
       const { status } = await parseResponse(await POST(req));
       expect(status).toBe(400);
+    });
+
+    it("별칭 없이 생성하면 자동으로 이름이 생성된다", async () => {
+      authenticate();
+      const req = createRequest("POST", "/api/accounts", {
+        portfolioId: "test-portfolio-1",
+        broker: "키움증권",
+        accountType: "irp",
+      });
+      const { body, status } = await parseResponse(await POST(req));
+      expect(status).toBe(201);
+      expect(body.name).toBe("키움증권 IRP");
+      expect(body.broker).toBe("키움증권");
     });
 
     it("다른 사용자의 포트폴리오에 생성하면 404를 반환한다", async () => {
       authenticate();
       const req = createRequest("POST", "/api/accounts", {
         portfolioId: "nonexistent",
-        name: "계좌",
+        broker: "삼성증권",
         accountType: "irp",
       });
       const { status } = await parseResponse(await POST(req));

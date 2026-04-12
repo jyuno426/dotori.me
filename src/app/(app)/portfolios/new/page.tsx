@@ -39,12 +39,12 @@ export default function NewPortfolioPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">이름</label>
+          <label className="block text-sm font-medium mb-1">이름 <span className="text-danger">*</span></label>
           <input
             name="name"
             required
             className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="예: 내 자산배분 포트폴리오"
+            placeholder="내 자산배분 포트폴리오"
           />
         </div>
         <div>
@@ -52,7 +52,7 @@ export default function NewPortfolioPage() {
           <input
             name="description"
             className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="예: 주식 60% / 채권 40% 자산배분"
+            placeholder="주식 60% / 채권 40% 자산배분"
           />
         </div>
 

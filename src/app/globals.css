@@ -24,13 +24,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --surface: #1a1a1a;
-    --surface-dim: #2a2a2a;
-  }
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --surface: #1a1a1a;
+  --surface-dim: #2a2a2a;
 }
 
 body {

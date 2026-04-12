@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, ArrowDownCircle, ArrowUpCircle, Wallet, BarChart3 } from "lucide-react";
+import { Trash2, Pencil, ArrowDownCircle, ArrowUpCircle, Wallet, BarChart3 } from "lucide-react";
 import { formatKRW } from "@/lib/utils";
 
 interface HoldingEntry {
@@ -37,9 +37,11 @@ const ASSET_CLASS_LABELS: Record<string, string> = {
 export function AccountTimeline({
   accountId,
   refreshKey = 0,
+  onEdit,
 }: {
   accountId: string;
   refreshKey?: number;
+  onEdit?: (snapshot: Snapshot) => void;
 }) {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,13 +101,24 @@ export function AccountTimeline({
                   {cashFlows.length > 0 && ` · 입출금 ${cashFlows.length}건`}
                 </span>
               </div>
-              <button
-                onClick={() => handleDelete(snap.id)}
-                className="p-1.5 text-foreground/40 hover:text-danger transition-colors"
-                aria-label="삭제"
-              >
-                <Trash2 size={14} />
-              </button>
+              <div className="flex items-center gap-1">
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(snap)}
+                    className="p-1.5 text-foreground/40 hover:text-primary transition-colors"
+                    aria-label="수정"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(snap.id)}
+                  className="p-1.5 text-foreground/40 hover:text-danger transition-colors"
+                  aria-label="삭제"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
 
             {/* 내용 */}
