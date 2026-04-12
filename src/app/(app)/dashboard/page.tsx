@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
   if (!portfolios && !error) return null;
 
-  if (error) {
+  if (error || !portfolios) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <p className="text-danger text-sm">{error}</p>
@@ -75,7 +75,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (portfolios!.length === 0) {
+  if (portfolios.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
         <AcornIcon className="w-16 h-16" />

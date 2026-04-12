@@ -127,6 +127,7 @@ export default function PortfolioDetailPage() {
   }
 
   if (!portfolio && !error) return null;
+  if (!portfolio) return null;
 
   return (
     <div className="space-y-6">

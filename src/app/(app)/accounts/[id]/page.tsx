@@ -124,19 +124,20 @@ export default function AccountDetailPage() {
     );
   }
 
+  if (!account && !error) return null;
+  if (!account) return null;
+
   async function handleDeleteAccount() {
     if (!confirm("이 계좌를 삭제하시겠습니까? 모든 기록이 함께 삭제됩니다.")) return;
     showLoading();
     const res = await fetch(`/api/accounts/${params.id}`, { method: "DELETE" });
     hideLoading();
     if (res.ok) {
-      router.push(account ? `/portfolios/${account.portfolioId}` : "/accounts");
+      router.push(`/portfolios/${account!.portfolioId}`);
     } else {
       alert("계좌 삭제에 실패했습니다.");
     }
   }
-
-  if (!account && !error) return null;
 
   return (
     <div className="space-y-6">
