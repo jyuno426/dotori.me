@@ -13,6 +13,7 @@ import { formatKRW } from "@/lib/utils";
 import { useLoading } from "@/components/ui/loading-overlay";
 import {
   Button,
+  DangerZone,
   EmptyState,
   Heading,
   Pill,
@@ -161,26 +162,15 @@ export default function PortfolioDetailPage() {
 
   return (
     <Stack gap="lg">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <Heading as="h1" level="heading-2">
-            {portfolio.name}
-          </Heading>
-          {portfolio.description && (
-            <Text size="body-sm" tone="muted" className="mt-1">
-              {portfolio.description}
-            </Text>
-          )}
-        </div>
-        <Button
-          variant="danger"
-          size="sm"
-          onClick={handleDeletePortfolio}
-          iconLeft={<Trash2 size={14} />}
-          className="shrink-0"
-        >
-          포트폴리오 삭제
-        </Button>
+      <div>
+        <Heading as="h1" level="heading-2">
+          {portfolio.name}
+        </Heading>
+        {portfolio.description && (
+          <Text size="body-sm" tone="muted" className="mt-1">
+            {portfolio.description}
+          </Text>
+        )}
       </div>
 
       <ReturnSummary portfolioId={params.id} refreshKey={refreshKey} />
@@ -268,6 +258,25 @@ export default function PortfolioDetailPage() {
           <HoldingsTable portfolioId={params.id} refreshKey={refreshKey} />
         </Stack>
       )}
+
+      <DangerZone
+        title="포트폴리오 삭제"
+        description={
+          accounts.length > 0
+            ? `연결된 계좌 ${accounts.length}개와 모든 기록·종목·목표비중이 함께 삭제됩니다. 되돌릴 수 없어요.`
+            : "한번 삭제하면 되돌릴 수 없어요."
+        }
+        action={
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleDeletePortfolio}
+            iconLeft={<Trash2 size={14} />}
+          >
+            포트폴리오 삭제
+          </Button>
+        }
+      />
     </Stack>
   );
 }

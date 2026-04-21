@@ -28,3 +28,4 @@ export { EmptyState } from "./EmptyState";
 export { Stat } from "./Stat";
 export { Alert } from "./Alert";
 export { PageHeader } from "./PageHeader";
+export { DangerZone } from "./DangerZone";

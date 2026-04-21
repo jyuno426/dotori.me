@@ -11,6 +11,7 @@ import { formatKRW } from "@/lib/utils";
 import { useLoading } from "@/components/ui/loading-overlay";
 import {
   Button,
+  DangerZone,
   EmptyState,
   Heading,
   Pill,
@@ -174,24 +175,14 @@ export default function AccountDetailPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={handleDeleteAccount}
-              iconLeft={<Trash2 size={14} />}
-            >
-              삭제
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setShowSnapshotForm(true)}
-              iconLeft={<Plus size={14} />}
-            >
-              새 기록 추가
-            </Button>
-          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setShowSnapshotForm(true)}
+            iconLeft={<Plus size={14} />}
+          >
+            새 기록 추가
+          </Button>
         </div>
       </div>
 
@@ -226,6 +217,21 @@ export default function AccountDetailPage() {
           onClose={() => setEditSnapshot(null)}
         />
       )}
+
+      <DangerZone
+        title="계좌 삭제"
+        description="이 계좌에 저장된 모든 날짜별 기록이 함께 삭제됩니다. 되돌릴 수 없어요."
+        action={
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={handleDeleteAccount}
+            iconLeft={<Trash2 size={14} />}
+          >
+            계좌 삭제
+          </Button>
+        }
+      />
     </Stack>
   );
 }
