@@ -7,6 +7,43 @@
 - `ROADMAP.md`을 참고하여, 미개발 항목에 우선순위 부여하여 개발.
 - `ROADMAP.md`에서 구현 완료된 항목의 체크박스를 `[x]`로 변경할 것
 
+## 디자인 시스템 정책
+
+**전체 가이드**: `docs/design-system.md` · **프리미티브**: `src/components/ds/` · **토큰**: `src/app/globals.css` (`@theme inline`)
+
+### 핵심 원칙 — UI를 만들 때 항상
+
+1. **프리미티브 우선** — 새 UI는 `@/components/ds`의 프리미티브 (`Container`, `Section`, `Heading`, `Text`, `Button`, `Pill`, `Card`, `Stack`, `Eyebrow`)를 기본으로 조립한다. 직접 `<section>`, `<div>`, `<h2>`에 Tailwind를 적는 패턴은 DS가 감당 못 하는 경우에만 사용.
+2. **토큰만 사용** — 색·폰트사이즈·간격은 반드시 토큰 (`bg-primary-50`, `text-heading-1`, `text-foreground-muted` 등). 임의 값 (`bg-[#abc]`, `text-[15px]`, `style={{color:"#f00"}}`)은 ESLint가 차단한다.
+3. **타이포 스케일 고정** — `text-display` / `heading-1~3` / `title-lg|md|sm` / `body-lg|md|sm|xs` / `label-lg|md|sm` / `caption` / `overline`. size/line-height/letter-spacing/weight는 각 토큰에 묶여 있으므로 개별 조정 금지. 스케일 밖이 필요하면 스케일 확장 검토 후 globals.css에 토큰 추가.
+4. **숫자에는 `nums`** — 금액·퍼센트·%·tabular 수치는 `<Text nums>` 또는 `className="nums"`로 tabular-nums 활성화.
+5. **한글 letter-spacing 관습** — 큰 제목은 음수(−0.012em ~ −0.025em), 본문 0, 작은 UI는 살짝 양수. 이미 타이포 토큰에 반영돼 있으므로 별도 지정 불필요.
+
+### 새 색·폰트·토큰이 필요할 때
+
+1. 먼저 기존 토큰으로 해결 가능한지 확인 (`docs/design-system.md` 토큰 테이블 참고)
+2. 없다면 `src/app/globals.css`의 `@theme inline` 블록에 토큰 추가 (색은 9단계 스케일 형태 권장)
+3. `docs/design-system.md` 토큰 테이블 업데이트
+4. 필요 시 프리미티브의 tone/variant 옵션으로 노출
+
+### 차트·일러스트의 예외 팔레트
+
+- 데이터 시각화 차트 (`*-chart.tsx` / `*.chart.tsx`)와 SVG 일러스트 (`components/**/icons/**`, `**/illustrations/**`, `acorn-icon.tsx`)는 **hex 리터럴 허용** (ESLint exempt)
+- 단 arbitrary Tailwind 색·폰트사이즈와 인라인 style은 여전히 차단
+- 차트 팔레트도 가능하면 DS 컬러를 먼저 후보로 (`var(--color-primary)` 등)
+
+### ESLint 강제 규칙 (위반 시 `pnpm lint` 실패)
+
+설정: `eslint.config.mjs` · 위반 메시지는 전부 "DS 위반: ..."으로 시작.
+
+- Tailwind arbitrary 색 값 금지 — `bg-[#abc]`, `border-[rgb(...)]`, `text-[hsl(...)]` 등
+- Tailwind arbitrary font-size 금지 — `text-[15px]`, `text-[1.1rem]` 등
+- 인라인 style에 hex 색 리터럴 금지 — `style={{color: "#abc"}}` (단 `style={{color: "var(--color-primary)"}}`는 통과)
+- 인라인 style에 fontSize/fontWeight 등 리터럴 금지 — `style={{fontSize: 14}}` 등
+- hex 컬러 리터럴 단독 금지 — `"#abc"`, `"#aabbcc"` (exempt 경로 제외)
+
+Claude는 위 규칙에 위배되는 코드를 **작성하기 전 단계에서** 자체 차단할 것. 무언가 불가피해 보이면 먼저 토큰 추가 여부를 사용자에게 제안한다.
+
 ## 테스트 정책
 
 ### 원칙
