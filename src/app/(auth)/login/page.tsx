@@ -40,10 +40,16 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
-          <AcornIcon className="w-12 h-12 mx-auto" />
-          <Heading as="h1" level="heading-2" tone="primary" className="mt-3">
-            도토리
-          </Heading>
+          <Link
+            href="/"
+            aria-label="도토리 소개 페이지로"
+            className="inline-flex flex-col items-center group transition-opacity duration-[var(--duration-fast)] hover:opacity-80"
+          >
+            <AcornIcon className="w-12 h-12" />
+            <Heading as="h1" level="heading-2" tone="primary" className="mt-3">
+              도토리
+            </Heading>
+          </Link>
           <Text size="body-sm" tone="muted" className="mt-1">
             ETF 자산배분 포트폴리오 관리
           </Text>

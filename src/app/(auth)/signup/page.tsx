@@ -50,7 +50,13 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
-          <AcornIcon className="w-12 h-12 mx-auto" />
+          <Link
+            href="/"
+            aria-label="도토리 소개 페이지로"
+            className="inline-block transition-opacity duration-[var(--duration-fast)] hover:opacity-80"
+          >
+            <AcornIcon className="w-12 h-12" />
+          </Link>
           <Heading as="h1" level="heading-2" tone="primary" className="mt-3">
             회원가입
           </Heading>
