@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Building2, Wallet, ChevronRight } from "lucide-react";
+import { Plus, Building2, Wallet, ChevronRight, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { HoldingsTable } from "@/components/portfolio/holdings-table";
 import { ReturnSummary } from "@/components/portfolio/return-summary";
 import { InstrumentManager } from "@/components/portfolio/instrument-manager";
@@ -57,6 +58,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 
 export default function PortfolioDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -135,17 +137,50 @@ export default function PortfolioDetailPage() {
 
   if (!portfolio) return null;
 
+  async function handleDeletePortfolio() {
+    if (!portfolio) return;
+    const accountCount = accounts.length;
+    const confirmMsg =
+      accountCount > 0
+        ? `"${portfolio.name}" 포트폴리오를 삭제하시겠습니까?\n연결된 계좌 ${accountCount}개와 모든 기록·종목·목표비중이 함께 삭제됩니다.\n되돌릴 수 없습니다.`
+        : `"${portfolio.name}" 포트폴리오를 삭제하시겠습니까?\n되돌릴 수 없습니다.`;
+    if (!confirm(confirmMsg)) return;
+
+    showLoading();
+    const res = await fetch(`/api/portfolios/${params.id}`, {
+      method: "DELETE",
+    });
+    hideLoading();
+    if (res.ok) {
+      router.push("/portfolios");
+      router.refresh();
+    } else {
+      alert("포트폴리오 삭제에 실패했습니다.");
+    }
+  }
+
   return (
     <Stack gap="lg">
-      <div>
-        <Heading as="h1" level="heading-2">
-          {portfolio.name}
-        </Heading>
-        {portfolio.description && (
-          <Text size="body-sm" tone="muted" className="mt-1">
-            {portfolio.description}
-          </Text>
-        )}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <Heading as="h1" level="heading-2">
+            {portfolio.name}
+          </Heading>
+          {portfolio.description && (
+            <Text size="body-sm" tone="muted" className="mt-1">
+              {portfolio.description}
+            </Text>
+          )}
+        </div>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={handleDeletePortfolio}
+          iconLeft={<Trash2 size={14} />}
+          className="shrink-0"
+        >
+          포트폴리오 삭제
+        </Button>
       </div>
 
       <ReturnSummary portfolioId={params.id} refreshKey={refreshKey} />

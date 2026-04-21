@@ -176,11 +176,10 @@ export default function AccountDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="danger"
               size="sm"
               onClick={handleDeleteAccount}
               iconLeft={<Trash2 size={14} />}
-              className="border-danger/30 text-danger hover:bg-danger-bg"
             >
               삭제
             </Button>

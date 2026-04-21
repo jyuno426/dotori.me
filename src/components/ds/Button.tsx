@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "outline";
+type Variant = "primary" | "secondary" | "ghost" | "outline" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const variantMap: Record<Variant, string> = {
@@ -13,6 +13,8 @@ const variantMap: Record<Variant, string> = {
     "text-foreground-muted hover:text-foreground-strong hover:bg-surface-muted",
   outline:
     "border border-border-strong text-foreground-strong hover:bg-surface-muted",
+  danger:
+    "border border-danger/30 text-danger hover:bg-danger-bg",
 };
 
 const sizeMap: Record<Size, string> = {
