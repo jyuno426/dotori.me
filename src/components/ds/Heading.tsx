@@ -33,7 +33,7 @@ const toneMap: Record<Tone, string> = {
 
 type As = "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "div" | "span";
 
-interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
+interface HeadingProps extends React.HTMLAttributes<HTMLElement> {
   as?: As;
   level?: Level;
   tone?: Tone;

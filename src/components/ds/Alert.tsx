@@ -35,7 +35,7 @@ const toneMap: Record<Tone, { border: string; bg: string; icon: string; title: s
   },
 };
 
-interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
+interface AlertProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   tone?: Tone;
   icon?: React.ReactNode;
   title?: React.ReactNode;

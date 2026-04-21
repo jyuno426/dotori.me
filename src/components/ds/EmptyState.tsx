@@ -8,7 +8,8 @@ const sizeMap: Record<Size, string> = {
   lg: "py-24 gap-5",
 };
 
-interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
+interface EmptyStateProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   icon?: React.ReactNode;
   title?: React.ReactNode;
   description?: React.ReactNode;

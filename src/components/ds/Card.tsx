@@ -26,7 +26,7 @@ const radiusMap: Record<Radius, string> = {
   "2xl": "rounded-3xl",
 };
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CardProps extends React.HTMLAttributes<HTMLElement> {
   tone?: Tone;
   padding?: Padding;
   radius?: Radius;

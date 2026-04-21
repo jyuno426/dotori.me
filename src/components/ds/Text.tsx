@@ -40,7 +40,7 @@ const toneMap: Record<Tone, string> = {
   danger: "text-danger",
 };
 
-interface TextProps extends React.HTMLAttributes<HTMLParagraphElement> {
+interface TextProps extends React.HTMLAttributes<HTMLElement> {
   as?: "p" | "span" | "div" | "li";
   size?: Size;
   tone?: Tone;
