@@ -146,7 +146,7 @@ export function SecuritySearch({ onSelect, placeholder = "종목명 또는 코�
                 <span className="text-xs text-foreground/50 font-mono ml-1.5">{sec.ticker}</span>
               </div>
               {sec.assetClass && (
-                <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-surface-dim text-foreground/50">
+                <span className="shrink-0 text-caption px-1.5 py-0.5 rounded-full bg-surface-dim text-foreground/50">
                   {ASSET_CLASS_LABELS[sec.assetClass] || sec.category}
                 </span>
               )}

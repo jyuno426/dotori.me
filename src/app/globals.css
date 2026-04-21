@@ -1,46 +1,284 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
 @import "tailwindcss";
 
-:root {
-  --background: #fafaf8;
-  --foreground: #1a1a1a;
-  --surface: #ffffff;
-  --surface-dim: #f0eeeb;
-}
+/* ─────────────────────────────────────────────────
+ * 도토리 Design System — Token Foundation
+ * ───────────────────────────────────────────────── */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: #4f7942;
-  --color-primary-light: #6b9f5b;
-  --color-primary-dark: #3a5c31;
-  --color-accent: #d4a574;
-  --color-accent-light: #e8c9a0;
-  --color-surface: var(--surface);
-  --color-surface-dim: var(--surface-dim);
-  --color-danger: #dc3545;
-  --color-success: #28a745;
-  --color-warning: #ffc107;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  /* Warm neutrals (off-white + warm gray) */
+  --bg-base: #faf9f6;
+  --bg-surface: #ffffff;
+  --bg-muted: #f4f2ec;
+  --bg-subtle: #ece7de;
+
+  --text-strong: #1a1a1a;
+  --text-default: #2d2a26;
+  --text-muted: #6b665e;
+  --text-subtle: #9a9389;
+
+  --border-base: #e8e3d9;
+  --border-strong: #d4cdc0;
 }
 
 html.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --surface: #1a1a1a;
-  --surface-dim: #2a2a2a;
+  --bg-base: #100f0c;
+  --bg-surface: #1a1813;
+  --bg-muted: #24211b;
+  --bg-subtle: #2f2b24;
+
+  --text-strong: #f5f1ea;
+  --text-default: #e3ddd1;
+  --text-muted: #9d968a;
+  --text-subtle: #6f695f;
+
+  --border-base: #2f2b24;
+  --border-strong: #3b362d;
 }
 
+@theme inline {
+  /* ── Color · Surface & text ───────────── */
+  --color-background: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-surface-muted: var(--bg-muted);
+  --color-surface-subtle: var(--bg-subtle);
+
+  --color-foreground: var(--text-default);
+  --color-foreground-strong: var(--text-strong);
+  --color-foreground-muted: var(--text-muted);
+  --color-foreground-subtle: var(--text-subtle);
+
+  --color-border: var(--border-base);
+  --color-border-strong: var(--border-strong);
+
+  /* Legacy alias — being phased out */
+  --color-surface-dim: var(--border-base);
+
+  /* ── Color · Primary (Forest green) ───── */
+  --color-primary-50: #f1f5ee;
+  --color-primary-100: #dce8d1;
+  --color-primary-200: #b8cea6;
+  --color-primary-300: #93b47a;
+  --color-primary-400: #6b9f5b;
+  --color-primary-500: #4f7942;
+  --color-primary-600: #3e6134;
+  --color-primary-700: #3a5c31;
+  --color-primary-800: #2e4627;
+  --color-primary-900: #1f301a;
+  --color-primary: var(--color-primary-500);
+  --color-primary-light: var(--color-primary-400);
+  --color-primary-dark: var(--color-primary-700);
+
+  /* ── Color · Accent (Warm amber — acorn) */
+  --color-accent-50: #fbf4e9;
+  --color-accent-100: #f4e2c5;
+  --color-accent-200: #e8c9a0;
+  --color-accent-300: #dcb288;
+  --color-accent-400: #d4a574;
+  --color-accent-500: #c08b57;
+  --color-accent-600: #9e6e3f;
+  --color-accent-700: #7b5330;
+  --color-accent: var(--color-accent-400);
+  --color-accent-light: var(--color-accent-200);
+  --color-accent-dark: var(--color-accent-600);
+
+  /* ── Color · Semantic ─────────────────── */
+  --color-success: #4f7942;
+  --color-success-bg: #eaf2e4;
+  --color-warning: #c08b57;
+  --color-warning-bg: #fbf0de;
+  --color-danger: #b24a3b;
+  --color-danger-bg: #fae6e2;
+  --color-info: #5b7a9a;
+  --color-info-bg: #e7eef5;
+
+  /* ── Typography · Family ──────────────── */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR",
+    "Malgun Gothic", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* ── Typography · Scale ───────────────── *
+   * size / line-height / letter-spacing / weight
+   * — Display: hero
+   * — Heading: section titles
+   * — Title: card/block titles
+   * — Body: prose
+   * — Label: UI chrome (buttons, form labels)
+   * — Caption / Overline: meta & section markers
+   */
+
+  /* Display — hero */
+  --text-display: 3.5rem; /* 56 */
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.025em;
+  --text-display--font-weight: 700;
+
+  --text-display-sm: 2.5rem; /* 40 — mobile hero */
+  --text-display-sm--line-height: 1.15;
+  --text-display-sm--letter-spacing: -0.022em;
+  --text-display-sm--font-weight: 700;
+
+  /* Heading — section */
+  --text-heading-1: 2rem; /* 32 */
+  --text-heading-1--line-height: 1.25;
+  --text-heading-1--letter-spacing: -0.018em;
+  --text-heading-1--font-weight: 700;
+
+  --text-heading-2: 1.5rem; /* 24 */
+  --text-heading-2--line-height: 1.3;
+  --text-heading-2--letter-spacing: -0.012em;
+  --text-heading-2--font-weight: 600;
+
+  --text-heading-3: 1.25rem; /* 20 */
+  --text-heading-3--line-height: 1.4;
+  --text-heading-3--letter-spacing: -0.006em;
+  --text-heading-3--font-weight: 600;
+
+  /* Title — card/block */
+  --text-title-lg: 1.125rem; /* 18 */
+  --text-title-lg--line-height: 1.45;
+  --text-title-lg--letter-spacing: -0.006em;
+  --text-title-lg--font-weight: 600;
+
+  --text-title: 1rem; /* 16 */
+  --text-title--line-height: 1.5;
+  --text-title--letter-spacing: -0.003em;
+  --text-title--font-weight: 600;
+
+  --text-title-sm: 0.875rem; /* 14 */
+  --text-title-sm--line-height: 1.45;
+  --text-title-sm--letter-spacing: 0em;
+  --text-title-sm--font-weight: 600;
+
+  /* Body — prose */
+  --text-body-lg: 1.125rem; /* 18 */
+  --text-body-lg--line-height: 1.7;
+  --text-body-lg--letter-spacing: 0em;
+  --text-body-lg--font-weight: 400;
+
+  --text-body: 1rem; /* 16 */
+  --text-body--line-height: 1.65;
+  --text-body--letter-spacing: 0em;
+  --text-body--font-weight: 400;
+
+  --text-body-sm: 0.875rem; /* 14 */
+  --text-body-sm--line-height: 1.6;
+  --text-body-sm--letter-spacing: 0em;
+  --text-body-sm--font-weight: 400;
+
+  --text-body-xs: 0.8125rem; /* 13 */
+  --text-body-xs--line-height: 1.55;
+  --text-body-xs--letter-spacing: 0.005em;
+  --text-body-xs--font-weight: 400;
+
+  /* Label — UI chrome */
+  --text-label-lg: 0.9375rem; /* 15 */
+  --text-label-lg--line-height: 1.35;
+  --text-label-lg--letter-spacing: -0.002em;
+  --text-label-lg--font-weight: 500;
+
+  --text-label: 0.875rem; /* 14 */
+  --text-label--line-height: 1.35;
+  --text-label--letter-spacing: 0em;
+  --text-label--font-weight: 500;
+
+  --text-label-sm: 0.8125rem; /* 13 */
+  --text-label-sm--line-height: 1.35;
+  --text-label-sm--letter-spacing: 0.005em;
+  --text-label-sm--font-weight: 500;
+
+  /* Caption & Overline */
+  --text-caption: 0.75rem; /* 12 */
+  --text-caption--line-height: 1.4;
+  --text-caption--letter-spacing: 0.015em;
+  --text-caption--font-weight: 500;
+
+  --text-overline: 0.8125rem; /* 13 */
+  --text-overline--line-height: 1.3;
+  --text-overline--letter-spacing: 0.04em;
+  --text-overline--font-weight: 600;
+
+  /* ── Radius ───────────────────────────── */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+  --radius-pill: 9999px;
+
+  /* ── Shadow (warm-tinted) ─────────────── *
+   * Base shadow tint uses warm-brown alpha,
+   * not pure black — ties back to natural palette.
+   */
+  --shadow-xs: 0 1px 2px 0 rgba(62, 48, 28, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(62, 48, 28, 0.06),
+    0 1px 2px -1px rgba(62, 48, 28, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(62, 48, 28, 0.07),
+    0 2px 4px -2px rgba(62, 48, 28, 0.04);
+  --shadow-lg: 0 12px 28px -6px rgba(62, 48, 28, 0.08),
+    0 4px 8px -4px rgba(62, 48, 28, 0.04);
+  --shadow-xl: 0 24px 48px -12px rgba(62, 48, 28, 0.1),
+    0 8px 16px -8px rgba(62, 48, 28, 0.05);
+
+  /* ── Motion ───────────────────────────── */
+  --ease-quiet: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-calm: cubic-bezier(0.45, 0, 0.25, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 280ms;
+  --duration-ambient: 520ms;
+
+  /* ── Z-index ──────────────────────────── */
+  --z-base: 0;
+  --z-raised: 1;
+  --z-sticky: 10;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}
+
+/* ─────────────────────────────────────────────────
+ * Base styles
+ * ───────────────────────────────────────────────── */
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss06", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Utility: tabular numerals for financial figures */
+.nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
 :focus:not(:focus-visible) {
   outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
