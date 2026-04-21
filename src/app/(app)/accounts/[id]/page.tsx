@@ -9,6 +9,14 @@ import { SnapshotEntryForm } from "@/components/portfolio/snapshot-entry-form";
 import { AccountTimeline } from "@/components/portfolio/account-timeline";
 import { formatKRW } from "@/lib/utils";
 import { useLoading } from "@/components/ui/loading-overlay";
+import {
+  Button,
+  EmptyState,
+  Heading,
+  Pill,
+  Stack,
+  Text,
+} from "@/components/ds";
 
 interface AccountDetail {
   id: string;
@@ -62,11 +70,8 @@ export default function AccountDetailPage() {
   const [editSnapshot, setEditSnapshot] = useState<Snapshot | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState("");
-
-  // 최신 예수금
   const [latestCash, setLatestCash] = useState<number | null>(null);
 
-  // 계좌 정보 로드
   useEffect(() => {
     showLoading();
     fetch(`/api/accounts/${params.id}`)
@@ -76,7 +81,6 @@ export default function AccountDetailPage() {
       })
       .then((data: AccountDetail) => {
         setAccount(data);
-        // 포트폴리오의 종목/비중 로드
         return Promise.all([
           fetch(`/api/instruments?portfolioId=${data.portfolioId}`).then((r) => r.json()),
           fetch(`/api/target-allocations?portfolioId=${data.portfolioId}`).then((r) => r.json()),
@@ -90,7 +94,6 @@ export default function AccountDetailPage() {
       .finally(() => hideLoading());
   }, [params.id, showLoading, hideLoading]);
 
-  // 최신 예수금 로드
   useEffect(() => {
     fetch(`/api/account-entries?accountId=${params.id}`)
       .then((r) => {
@@ -98,10 +101,7 @@ export default function AccountDetailPage() {
         return r.json();
       })
       .then((data: Snapshot[]) => {
-        if (data.length > 0) {
-          // 최신 날짜순으로 정렬되어 있음
-          setLatestCash(data[0].cash);
-        }
+        if (data.length > 0) setLatestCash(data[0].cash);
       })
       .catch(() => {});
   }, [params.id, refreshKey]);
@@ -112,19 +112,18 @@ export default function AccountDetailPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <p className="text-danger text-sm">{error}</p>
-        <Link
-          href="/portfolios"
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
-        >
-          포트폴리오 목록으로
-        </Link>
-      </div>
+      <EmptyState
+        size="lg"
+        title={<Text size="body-sm" tone="danger">{error}</Text>}
+        action={
+          <Button href="/portfolios" variant="primary" size="sm">
+            포트폴리오 목록으로
+          </Button>
+        }
+      />
     );
   }
 
-  if (!account && !error) return null;
   if (!account) return null;
 
   async function handleDeleteAccount() {
@@ -140,64 +139,74 @@ export default function AccountDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 헤더 */}
+    <Stack gap="lg">
       <div>
         <Link
           href={`/portfolios/${account.portfolioId}`}
-          className="inline-flex items-center gap-1 text-sm text-foreground/60 hover:text-foreground transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-body-sm text-foreground-muted hover:text-foreground-strong transition-colors mb-3"
         >
           <ArrowLeft size={14} />
           {account.portfolioName}
         </Link>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold">{account.name}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+            <Heading as="h1" level="heading-2">
+              {account.name}
+            </Heading>
+            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+              <Pill tone="primary" size="sm" bordered={false}>
                 {ACCOUNT_TYPE_LABELS[account.accountType] || account.accountType}
-              </span>
+              </Pill>
               {account.broker && (
-                <span className="text-sm text-foreground/60">{account.broker}</span>
+                <Text as="span" size="body-sm" tone="muted">
+                  {account.broker}
+                </Text>
               )}
               {latestCash != null && latestCash > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-surface-dim text-foreground/60 flex items-center gap-1">
-                  <Wallet size={10} />
+                <Pill
+                  tone="muted"
+                  size="sm"
+                  bordered={false}
+                  icon={<Wallet size={10} />}
+                >
                   예수금 {formatKRW(latestCash)}
-                </span>
+                </Pill>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleDeleteAccount}
-              className="flex items-center gap-1.5 rounded-lg border border-danger/30 px-3 py-2 text-sm font-medium text-danger hover:bg-danger/5 transition-colors"
+              iconLeft={<Trash2 size={14} />}
+              className="border-danger/30 text-danger hover:bg-danger-bg"
             >
-              <Trash2 size={14} />
               삭제
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => setShowSnapshotForm(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
+              iconLeft={<Plus size={14} />}
             >
-              <Plus size={14} />
               새 기록 추가
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* 기록 타임라인 */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground/70">기록 타임라인</h2>
+      <Stack gap="sm">
+        <Heading as="h2" level="title-sm" tone="muted">
+          기록 타임라인
+        </Heading>
         <AccountTimeline
           accountId={params.id}
           refreshKey={refreshKey}
           onEdit={handleEdit}
         />
-      </div>
+      </Stack>
 
-      {/* 새 기록 모달 */}
       {showSnapshotForm && (
         <SnapshotEntryForm
           accountId={params.id}
@@ -208,7 +217,6 @@ export default function AccountDetailPage() {
         />
       )}
 
-      {/* 수정 모달 */}
       {editSnapshot && (
         <SnapshotEntryForm
           accountId={params.id}
@@ -219,6 +227,6 @@ export default function AccountDetailPage() {
           onClose={() => setEditSnapshot(null)}
         />
       )}
-    </div>
+    </Stack>
   );
 }

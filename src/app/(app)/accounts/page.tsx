@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { Plus, Building2, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useLoading } from "@/components/ui/loading-overlay";
+import {
+  Button,
+  EmptyState,
+  PageHeader,
+  Pill,
+  Stack,
+  Text,
+} from "@/components/ds";
 
 interface Account {
   id: string;
@@ -36,55 +44,65 @@ export default function AccountsPage() {
   if (!accounts) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">계좌 관리</h1>
-        <Link
-          href="/accounts/new"
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
-        >
-          <Plus size={14} />
-          새 계좌
-        </Link>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="계좌 관리"
+        actions={
+          <Button
+            href="/accounts/new"
+            variant="primary"
+            size="sm"
+            iconLeft={<Plus size={14} />}
+          >
+            새 계좌
+          </Button>
+        }
+      />
 
       {accounts.length === 0 ? (
-        <div className="text-center py-16 text-foreground/60">
-          <Building2 size={40} className="mx-auto mb-3 text-foreground/60" />
-          <p>등록된 계좌가 없습니다.</p>
-          <p className="text-sm mt-1">먼저 포트폴리오를 만들고 계좌를 추가해주세요.</p>
-        </div>
+        <EmptyState
+          icon={<Building2 size={40} />}
+          title="등록된 계좌가 없습니다"
+          description="먼저 포트폴리오를 만들고 계좌를 추가해주세요."
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {accounts.map((acc) => (
             <Link
               key={acc.id}
               href={`/accounts/${acc.id}`}
-              className="rounded-xl border border-surface-dim bg-surface p-5 transition-colors hover:border-primary/30 group"
+              className="group rounded-xl border border-border bg-surface p-5 transition-colors duration-[var(--duration-fast)] hover:border-primary-200"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-semibold">{acc.name}</p>
+                  <p className="text-title-lg text-foreground-strong">
+                    {acc.name}
+                  </p>
                   {acc.broker && (
-                    <p className="text-xs text-foreground/60 mt-0.5">{acc.broker}</p>
+                    <Text size="caption" tone="muted" className="mt-0.5">
+                      {acc.broker}
+                    </Text>
                   )}
                 </div>
-                <ChevronRight size={16} className="text-foreground/30 group-hover:text-foreground/60 transition-colors mt-1" />
+                <ChevronRight
+                  size={16}
+                  className="text-foreground-subtle group-hover:text-foreground-muted transition-colors mt-1"
+                />
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                <Pill tone="primary" size="sm" bordered={false}>
                   {ACCOUNT_TYPE_LABELS[acc.accountType] || acc.accountType}
-                </span>
+                </Pill>
               </div>
               {acc.portfolioName && (
-                <p className="text-xs text-foreground/60 mt-2">
+                <Text size="caption" tone="muted" className="mt-2">
                   포트폴리오: {acc.portfolioName}
-                </p>
+                </Text>
               )}
             </Link>
           ))}
         </div>
       )}
-    </div>
+    </Stack>
   );
 }

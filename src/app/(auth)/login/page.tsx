@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AcornIcon } from "@/components/ui/acorn-icon";
+import { Button, FormField, Heading, Input, Stack, Text } from "@/components/ds";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,57 +37,60 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <AcornIcon className="w-12 h-12 mx-auto" />
-          <h1 className="mt-2 text-2xl font-bold text-primary-dark">도토리</h1>
-          <p className="mt-1 text-sm text-foreground/60">
+          <Heading as="h1" level="heading-2" tone="primary" className="mt-3">
+            도토리
+          </Heading>
+          <Text size="body-sm" tone="muted" className="mt-1">
             ETF 자산배분 포트폴리오 관리
-          </p>
+          </Text>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">이메일 <span className="text-danger">*</span></label>
-            <input
-              name="email"
-              type="email"
-              required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="you@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">비밀번호 <span className="text-danger">*</span></label>
-            <input
-              name="password"
-              type="password"
-              required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="••••••••"
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          <Stack gap="md">
+            <FormField label="이메일" htmlFor="email" required>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+              />
+            </FormField>
+            <FormField label="비밀번호" htmlFor="password" required>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                placeholder="••••••••"
+              />
+            </FormField>
 
-          {error && (
-            <p className="text-sm text-danger">{error}</p>
-          )}
+            {error && (
+              <Text size="body-sm" tone="danger">
+                {error}
+              </Text>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
-          >
-            {loading ? "로그인 중..." : "로그인"}
-          </button>
+            <Button type="submit" variant="primary" size="md" fullWidth disabled={loading}>
+              {loading ? "로그인 중..." : "로그인"}
+            </Button>
+          </Stack>
         </form>
 
-        <p className="text-center text-sm text-foreground/60">
+        <Text size="body-sm" tone="muted" className="text-center">
           계정이 없으신가요?{" "}
-          <Link href="/signup" className="text-primary font-medium hover:underline">
+          <Link
+            href="/signup"
+            className="text-primary font-medium hover:underline"
+          >
             회원가입
           </Link>
-        </p>
+        </Text>
       </div>
     </div>
   );

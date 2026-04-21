@@ -3,6 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Moon, Sun, Check } from "lucide-react";
+import {
+  Button,
+  Card,
+  FormField,
+  Heading,
+  Input,
+  PageHeader,
+  Stack,
+  Text,
+} from "@/components/ds";
+import { cn } from "@/lib/cn";
 
 interface Profile {
   id: string;
@@ -78,90 +89,110 @@ export default function SettingsPage() {
   if (!profile && !error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-foreground/60">로딩 중...</div>
+        <Text tone="muted">로딩 중...</Text>
       </div>
     );
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-8">
-      <h1 className="text-xl font-bold">설정</h1>
+    <div className="max-w-lg mx-auto">
+      <Stack gap="xl">
+        <PageHeader title="설정" />
 
-      {/* 프로필 */}
-      <section className="rounded-xl border border-surface-dim bg-surface p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-foreground/70">프로필</h2>
+        <Card padding="md" radius="lg">
+          <Stack gap="md">
+            <Heading as="h2" level="title-sm" tone="muted">
+              프로필
+            </Heading>
 
-        {profile && (
-          <>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-foreground/60">이메일</label>
-              <p className="text-sm">{profile.email}</p>
-            </div>
+            {profile && (
+              <>
+                <FormField label="이메일">
+                  <Text size="body-sm">{profile.email}</Text>
+                </FormField>
 
-            <form onSubmit={handleSaveName} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">이름</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="이름을 입력하세요"
-                />
+                <form onSubmit={handleSaveName}>
+                  <Stack gap="sm">
+                    <FormField label="이름" htmlFor="profile-name">
+                      <Input
+                        id="profile-name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="이름을 입력하세요"
+                      />
+                    </FormField>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        disabled={saving}
+                      >
+                        {saving ? "저장 중..." : "저장"}
+                      </Button>
+                      {saved && (
+                        <span className="flex items-center gap-1 text-label text-success">
+                          <Check size={14} />
+                          저장됨
+                        </span>
+                      )}
+                    </div>
+                  </Stack>
+                </form>
+              </>
+            )}
+
+            {error && (
+              <Text size="body-sm" tone="danger">
+                {error}
+              </Text>
+            )}
+          </Stack>
+        </Card>
+
+        <Card padding="md" radius="lg">
+          <Stack gap="md">
+            <Heading as="h2" level="title-sm" tone="muted">
+              화면 테마
+            </Heading>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-body-sm">
+                {dark ? <Moon size={16} /> : <Sun size={16} />}
+                {dark ? "다크 모드" : "라이트 모드"}
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
-                >
-                  {saving ? "저장 중..." : "저장"}
-                </button>
-                {saved && (
-                  <span className="flex items-center gap-1 text-sm text-success">
-                    <Check size={14} />
-                    저장됨
-                  </span>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={cn(
+                  "relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-[var(--duration-fast)]",
+                  dark ? "bg-primary" : "bg-surface-subtle",
                 )}
-              </div>
-            </form>
-          </>
-        )}
+                aria-label="테마 전환"
+                aria-pressed={dark}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-5 w-5 rounded-full bg-surface shadow-sm transition-transform duration-[var(--duration-fast)]",
+                    dark ? "translate-x-[22px]" : "translate-x-[4px]",
+                  )}
+                />
+              </button>
+            </div>
+          </Stack>
+        </Card>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
-      </section>
-
-      {/* 테마 */}
-      <section className="rounded-xl border border-surface-dim bg-surface p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-foreground/70">화면 테마</h2>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm">
-            {dark ? <Moon size={16} /> : <Sun size={16} />}
-            {dark ? "다크 모드" : "라이트 모드"}
-          </div>
-          <button
-            onClick={toggleTheme}
-            className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors"
-            style={{ backgroundColor: dark ? "var(--color-primary)" : "var(--color-surface-dim)" }}
-            aria-label="테마 전환"
+        <Card padding="md" radius="lg">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            iconLeft={<LogOut size={16} />}
+            className="text-danger hover:text-danger"
           >
-            <span
-              className="inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform"
-              style={{ transform: dark ? "translateX(22px)" : "translateX(4px)" }}
-            />
-          </button>
-        </div>
-      </section>
-
-      {/* 로그아웃 */}
-      <section className="rounded-xl border border-surface-dim bg-surface p-5">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-sm text-danger hover:underline"
-        >
-          <LogOut size={16} />
-          로그아웃
-        </button>
-      </section>
+            로그아웃
+          </Button>
+        </Card>
+      </Stack>
     </div>
   );
 }

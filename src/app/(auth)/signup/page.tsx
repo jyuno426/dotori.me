@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AcornIcon } from "@/components/ui/acorn-icon";
+import { Button, FormField, Heading, Input, Stack, Text } from "@/components/ds";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -46,75 +47,83 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <AcornIcon className="w-12 h-12 mx-auto" />
-          <h1 className="mt-2 text-2xl font-bold text-primary-dark">회원가입</h1>
-          <p className="mt-1 text-sm text-foreground/60">
+          <Heading as="h1" level="heading-2" tone="primary" className="mt-3">
+            회원가입
+          </Heading>
+          <Text size="body-sm" tone="muted" className="mt-1">
             도토리와 함께 투자를 시작하세요
-          </p>
+          </Text>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">이름 <span className="text-foreground/50">(선택)</span></label>
-            <input
-              name="name"
-              type="text"
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="홍길동"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">이메일 <span className="text-danger">*</span></label>
-            <input
-              name="email"
-              type="email"
-              required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="you@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">비밀번호 <span className="text-danger">*</span></label>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="8자 이상"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">비밀번호 확인 <span className="text-danger">*</span></label>
-            <input
-              name="confirm"
-              type="password"
-              required
-              className="w-full rounded-lg border border-surface-dim px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="비밀번호 재입력"
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          <Stack gap="md">
+            <FormField
+              label={
+                <>
+                  이름{" "}
+                  <span className="text-foreground-subtle font-normal">
+                    (선택)
+                  </span>
+                </>
+              }
+              htmlFor="name"
+            >
+              <Input id="name" name="name" type="text" placeholder="홍길동" />
+            </FormField>
+            <FormField label="이메일" htmlFor="email" required>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+              />
+            </FormField>
+            <FormField label="비밀번호" htmlFor="password" required>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                minLength={8}
+                placeholder="8자 이상"
+              />
+            </FormField>
+            <FormField label="비밀번호 확인" htmlFor="confirm" required>
+              <Input
+                id="confirm"
+                name="confirm"
+                type="password"
+                required
+                placeholder="비밀번호 재입력"
+              />
+            </FormField>
 
-          {error && <p className="text-sm text-danger">{error}</p>}
+            {error && (
+              <Text size="body-sm" tone="danger">
+                {error}
+              </Text>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
-          >
-            {loading ? "가입 중..." : "회원가입"}
-          </button>
+            <Button type="submit" variant="primary" size="md" fullWidth disabled={loading}>
+              {loading ? "가입 중..." : "회원가입"}
+            </Button>
+          </Stack>
         </form>
 
-        <p className="text-center text-sm text-foreground/60">
+        <Text size="body-sm" tone="muted" className="text-center">
           이미 계정이 있으신가요?{" "}
-          <Link href="/login" className="text-primary font-medium hover:underline">
+          <Link
+            href="/login"
+            className="text-primary font-medium hover:underline"
+          >
             로그인
           </Link>
-        </p>
+        </Text>
       </div>
     </div>
   );
