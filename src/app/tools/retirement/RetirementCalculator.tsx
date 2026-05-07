@@ -353,8 +353,8 @@ function ResultPanel({ result, hydrated }: ResultPanelProps) {
           >
             도토리에서 시작하기
           </Button>
-          <Button href="/" variant="ghost" size="lg">
-            도토리 더 알아보기
+          <Button href="/tools/portfolio-quiz" variant="outline" size="lg">
+            내게 맞는 자산배분 먼저 보기
           </Button>
         </div>
       </Card>
