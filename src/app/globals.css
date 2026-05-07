@@ -282,3 +282,67 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ─────────────────────────────────────────────────
+ * Dotori range slider — gentle forest tone
+ * Used by /tools/retirement and similar inputs.
+ * ───────────────────────────────────────────────── */
+
+.dotori-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--color-primary) 0%,
+    var(--color-primary) var(--fill, 0%),
+    var(--color-border) var(--fill, 0%),
+    var(--color-border) 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+.dotori-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  cursor: grab;
+  transition:
+    transform var(--duration-fast) var(--ease-quiet),
+    border-color var(--duration-fast) var(--ease-quiet);
+}
+
+.dotori-slider::-webkit-slider-thumb:hover {
+  border-color: var(--color-primary-dark);
+  transform: scale(1.05);
+}
+
+.dotori-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+.dotori-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  cursor: grab;
+}
+
+.dotori-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgb(from var(--color-primary) r g b / 0.25);
+}
+
+.dotori-slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgb(from var(--color-primary) r g b / 0.25);
+}

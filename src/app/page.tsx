@@ -93,6 +93,9 @@ export default async function LandingPage() {
                 >
                   무료로 시작하기
                 </Button>
+                <Button href="/tools/retirement" variant="outline" size="lg">
+                  은퇴 자금 먼저 확인하기
+                </Button>
               </div>
 
               <Stack3 className="mt-8">
