@@ -261,36 +261,36 @@ function ResultPanel({ result, hydrated }: ResultPanelProps) {
         {isSurplus ? (
           <>
             <Heading as="h2" level="heading-1" className="mt-3">
-              이미 충분해요
+              이미 충분히 가고 계세요
             </Heading>
             <Text size="body-lg" tone="muted" className="mt-3">
-              지금 페이스로 가면 은퇴 시점에 약{" "}
+              지금 페이스대로면 은퇴 시점에 약{" "}
               <span className="text-foreground-strong nums">
                 {formatKorean(result.projectedAssets)}
               </span>
-              까지 도달해요. 더 일찍 은퇴해도 좋고, 그 사이에 무엇을 더할지
-              여유 있게 고민해도 괜찮아요.
+              까지 도달해요. 더 일찍 멈춰도 좋고, 다른 곳에 마음 편히 쓰셔도
+              괜찮아요.
             </Text>
           </>
         ) : (
           <>
             <Heading as="h2" level="heading-1" className="mt-3">
-              {hydrated ? formatKorean(result.neededAssets) : "—"}이 필요해요
+              {hydrated ? formatKorean(result.neededAssets) : "—"} 정도면 든든해요
             </Heading>
             <Text size="body-lg" tone="muted" className="mt-3">
               지금 페이스로는{" "}
               <span className="text-foreground-strong nums">
                 {formatKorean(result.projectedAssets)}
               </span>
-              까지 가요. 차이는{" "}
+              까지 와요. 남은 건{" "}
               <span className="text-primary-dark nums font-medium">
                 {formatKorean(result.gap)}
               </span>
-              .
+              {" "}이 정도예요.
             </Text>
             <Text size="body" className="mt-4 text-foreground-strong">
-              이미 한 발 시작했어요. 큰 부분은 이미 와 있고, 나머지가 지금부터
-              채울 부분이에요.
+              이미 한 발은 시작하셨어요. 큰 부분은 이미 와 있고, 남은 만큼만
+              지금부터 채워가면 돼요.
             </Text>
           </>
         )}
@@ -342,19 +342,19 @@ function ResultPanel({ result, hydrated }: ResultPanelProps) {
         </Heading>
         <Text size="body" tone="muted" className="mt-2">
           도토리는 *어느 계좌에 어느 종목 몇 주*까지 매달 정리해드려요. 매매는
-          증권사 앱에서, 매달 5분이면 끝나요.
+          증권사 앱에서 직접, 매달 5분이면 끝나요.
         </Text>
         <div className="mt-5 flex flex-wrap gap-3">
           <Button
-            href="/signup"
+            href="/tools/portfolio-quiz"
             variant="primary"
             size="lg"
             iconRight={<ArrowRight className="w-4 h-4" />}
           >
-            도토리에서 시작하기
+            맞는 자산배분 골라보기
           </Button>
-          <Button href="/tools/portfolio-quiz" variant="outline" size="lg">
-            내게 맞는 자산배분 먼저 보기
+          <Button href="/signup" variant="outline" size="lg">
+            바로 가입할게요
           </Button>
         </div>
       </Card>

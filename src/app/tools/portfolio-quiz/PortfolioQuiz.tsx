@@ -72,11 +72,11 @@ export function PortfolioQuiz() {
       <header className="mb-10 sm:mb-14 text-center">
         <Eyebrow>자산배분 진단</Eyebrow>
         <Heading as="h1" level="display" className="mt-3">
-          내게 맞는 자산배분
+          두세 질문, 한 가지 답.
         </Heading>
         <Text size="body-lg" tone="muted" className="mt-4 max-w-xl mx-auto">
-          2~3분, 두세 문항이면 끝나요. 4가지 검증된 자산배분 중 결이 맞는 것을
-          찾아드릴게요.
+          책과 미디어에서 검증된 4가지 자산배분 중 결이 맞는 한 길을 골라드려요.
+          2분이면 충분해요.
         </Text>
       </header>
 
@@ -143,11 +143,11 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         <AcornIcon className="w-14 h-14" />
       </div>
       <Heading as="h2" level="heading-2">
-        가장 결이 맞는 한 길을 찾아드릴게요
+        결이 맞는 한 길을 함께 골라볼게요
       </Heading>
       <Text size="body" tone="muted" className="mt-3 max-w-md mx-auto">
-        영구포트폴리오, K-올웨더형, 글로벌 60/40, 30대 성장형 — 책과 미디어에서
-        검증된 4가지 중 1순위와 2순위를 보여드려요.
+        영구포트폴리오 · K-올웨더형 · 글로벌 60/40 · 30대 성장형. 책과 미디어에서
+        검증된 4가지 중 *나에게 잘 어울리는* 1순위·2순위를 골라드려요.
       </Text>
       <div className="mt-7">
         <Button
@@ -156,7 +156,7 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
           size="lg"
           iconRight={<ArrowRight className="w-4 h-4" />}
         >
-          시작하기
+          진단 시작하기
         </Button>
       </div>
     </Card>
@@ -266,11 +266,10 @@ function ResultPanel({
           {primary.matchCopy}
         </Heading>
         <Text size="body-lg" tone="muted" className="mt-3">
-          당신께는{" "}
           <span className="text-foreground-strong font-medium">
             {primary.name}
           </span>
-          이 잘 어울려요.
+          이 가장 잘 어울려요. 가입하면 이대로 한 번에 셋업해드릴게요.
         </Text>
       </Card>
 
@@ -285,7 +284,7 @@ function ResultPanel({
           onClick={() => savePreset(primary.key)}
           iconRight={<ArrowRight className="w-4 h-4" />}
         >
-          {primary.name}으로 시작하기
+          {primary.name}으로 시작할게요
         </Button>
       </div>
 
@@ -302,7 +301,7 @@ function ResultPanel({
             fullWidth
             onClick={() => savePreset(secondary.key)}
           >
-            {secondary.name}으로 시작하기
+            {secondary.name}으로 갈게요
           </Button>
         </div>
       </div>

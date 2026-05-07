@@ -143,13 +143,13 @@ export function SetupFromPreset() {
       </Card>
 
       <Card padding="lg" radius="xl" className="mb-6">
-        <Eyebrow tone="muted">자동으로 만들어드릴 항목</Eyebrow>
+        <Eyebrow tone="muted">한 번에 채워드릴 것들</Eyebrow>
         <ul className="mt-3 space-y-2 text-body-sm text-foreground">
           <li className="flex items-start gap-2">
             <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <span>
-              <strong className="text-foreground-strong">포트폴리오 1개</strong>{" "}
-              — {preset.name} 비중 그대로 셋업
+              <strong className="text-foreground-strong">포트폴리오 한 개</strong>{" "}
+              — {preset.name} 비중 그대로
             </span>
           </li>
           <li className="flex items-start gap-2">
@@ -158,14 +158,14 @@ export function SetupFromPreset() {
               <strong className="text-foreground-strong">
                 목표 비중 {activeCategories.length}개
               </strong>{" "}
-              — 자산군별 대표 ETF로 자동 매핑 (나중에 자유롭게 교체 가능)
+              — 자산군별 대표 ETF로 (언제든 바꾸실 수 있어요)
             </span>
           </li>
           <li className="flex items-start gap-2">
             <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <span>
-              <strong className="text-foreground-strong">계좌 1개</strong> —
-              아래에서 이름·종류 선택
+              <strong className="text-foreground-strong">시작 계좌 한 개</strong>{" "}
+              — 이름·종류만 골라주세요
             </span>
           </li>
         </ul>

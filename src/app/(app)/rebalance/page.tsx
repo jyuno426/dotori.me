@@ -14,6 +14,7 @@ import {
   type TradeOrder,
 } from "@/lib/rebalance";
 import {
+  Button,
   Card,
   EmptyState,
   FormField,
@@ -399,10 +400,17 @@ export default function RebalancePage() {
             Number(contribution) > 0 && (
               <div className="rounded-xl border border-dashed border-border p-6 text-center">
                 <Text size="body-sm" tone="muted">
-                  현재가 데이터가 부족하여 배분을 계산할 수 없습니다.
+                  현재가 데이터를 채우는 중이에요. 잠시 후 다시 시도해보세요.
                 </Text>
               </div>
             )}
+
+          {activeOrders.length > 0 && (
+            <NextStepsCard
+              isFreshPortfolio={isFreshPortfolio}
+              accountTracker={selectedId}
+            />
+          )}
 
           <Card padding="md" radius="lg">
             <Stack gap="sm">
@@ -423,6 +431,81 @@ export default function RebalancePage() {
         </>
       )}
     </Stack>
+  );
+}
+
+function NextStepsCard({
+  isFreshPortfolio,
+  accountTracker,
+}: {
+  isFreshPortfolio: boolean;
+  accountTracker: string;
+}) {
+  return (
+    <Card tone="muted" padding="lg" radius="xl">
+      <Heading as="h2" level="title" tone="default">
+        다음 한 걸음
+      </Heading>
+      <Text size="body-sm" tone="muted" className="mt-2">
+        매매 지시서대로 따라가면 끝나는 한 사이클이에요. 다람쥐도 한 알씩 모으니까요.
+      </Text>
+      <ol className="mt-5 space-y-3 text-body-sm text-foreground">
+        <li className="flex items-start gap-3">
+          <StepBadge>1</StepBadge>
+          <div>
+            <strong className="text-foreground-strong">증권사 앱에서 매매</strong>
+            <Text size="caption" tone="muted" className="mt-0.5 block">
+              위 지시서대로 종목·수량을 매매하세요. 이미 IRP·연금저축이 있다면
+              그 계좌 안에서.
+            </Text>
+          </div>
+        </li>
+        <li className="flex items-start gap-3">
+          <StepBadge>2</StepBadge>
+          <div>
+            <strong className="text-foreground-strong">
+              체결되면 보유 수량 입력
+            </strong>
+            <Text size="caption" tone="muted" className="mt-0.5 block">
+              매매를 마친 후 도토리에 보유 수량을 적어두면 다음 달부터 자동
+              계산이 더 정확해져요.
+            </Text>
+            {accountTracker && (
+              <div className="mt-2">
+                <Button
+                  href={`/portfolios/${accountTracker}`}
+                  variant="outline"
+                  size="sm"
+                >
+                  포트폴리오 상세로 가기
+                </Button>
+              </div>
+            )}
+          </div>
+        </li>
+        <li className="flex items-start gap-3">
+          <StepBadge>3</StepBadge>
+          <div>
+            <strong className="text-foreground-strong">
+              월급일에 다시 들러주세요
+            </strong>
+            <Text size="caption" tone="muted" className="mt-0.5 block">
+              {isFreshPortfolio
+                ? "다음 달 적립금을 입력하면 바로 다음 매매 지시서가 떠요. 평소엔 조용해요."
+                : "비중이 ±5%p 이상 흔들릴 때만 도토리가 알려드려요. 평소엔 조용해요."}
+            </Text>
+          </div>
+        </li>
+      </ol>
+    </Card>
+  );
+}
+
+function StepBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="mt-0.5 inline-flex w-6 h-6 items-center justify-center rounded-full bg-primary text-white text-label-sm shrink-0">
+      {children}
+    </span>
   );
 }
 

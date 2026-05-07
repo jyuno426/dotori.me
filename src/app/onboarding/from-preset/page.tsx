@@ -29,13 +29,13 @@ export default async function OnboardingFromPresetPage() {
       <main className="py-12 sm:py-20">
         <Container className="max-w-2xl">
           <header className="mb-10 text-center">
-            <Eyebrow>한 번만 더</Eyebrow>
+            <Eyebrow>한 단계 남았어요</Eyebrow>
             <Heading as="h1" level="display" className="mt-3">
-              자동으로 셋업해드릴게요
+              한 번에 셋업해드릴게요
             </Heading>
             <Text size="body-lg" tone="muted" className="mt-4 max-w-xl mx-auto">
-              진단에서 고른 자산배분 그대로 *포트폴리오·종목·목표 비중·계좌*를
-              한 번에 만들어요.
+              진단에서 고른 자산배분 그대로 *포트폴리오·종목·목표 비중·첫
+              계좌*까지 한 번에 만들어요. 매매 지시서가 곧 떠요.
             </Text>
           </header>
 

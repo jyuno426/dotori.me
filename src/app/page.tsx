@@ -70,31 +70,31 @@ export default async function LandingPage() {
                 투자가 처음이어도, 이미 하고 있어도
               </Pill>
               <Heading as="h1" level="display" className="mt-6">
-                월급날,
-                <br />더 이상{" "}
-                <span className="text-primary">헤매지 마세요.</span>
+                노후 준비,
+                <br />
+                <span className="text-primary">천천히 한 알씩.</span>
               </Heading>
               <Text
                 size="body-lg"
                 tone="muted"
                 className="mt-6 max-w-xl"
               >
-                ISA · 연금저축 · IRP를 한 화면에 모으고, 이번 달 뭘 몇 주 사야
-                할지까지 계산해드려요. 투자 용어를 몰라도, 5분이면 첫 그림이
-                그려집니다.
+                막연하던 노후를 분명한 숫자로, 검증된 자산배분 한 가지를
+                골라 매달 5분이면 끝나는 매매 지시서까지 — 가입 없이
+                90초면 첫 그림이 그려져요.
               </Text>
 
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <Button
-                  href="/login"
+                  href="/tools/retirement"
                   variant="primary"
                   size="lg"
                   iconRight={<ArrowRight className="w-4 h-4" />}
                 >
-                  무료로 시작하기
+                  90초 진단 시작하기
                 </Button>
-                <Button href="/tools/retirement" variant="outline" size="lg">
-                  은퇴 자금 먼저 확인하기
+                <Button href="/login" variant="outline" size="lg">
+                  이미 가입하셨다면
                 </Button>
               </div>
 
