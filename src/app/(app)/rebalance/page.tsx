@@ -76,7 +76,7 @@ export default function RebalancePage() {
       fetch(`/api/target-allocations?portfolioId=${selectedId}`).then((r) => r.json()),
       fetch(`/api/returns?portfolioId=${selectedId}`).then((r) => (r.ok ? r.json() : null)),
     ])
-      .then(([allocs, returns]: [TargetAllocation[], ReturnData | null]) => {
+      .then(async ([allocs, returns]: [TargetAllocation[], ReturnData | null]) => {
         const tgts: TargetWeight[] = allocs.map((a) => ({
           ticker: a.ticker,
           name: a.name,
@@ -84,8 +84,11 @@ export default function RebalancePage() {
         }));
         setTargets(tgts);
 
-        if (returns?.holdingDetails) {
-          const pos: HoldingPosition[] = returns.holdingDetails
+        let pos: HoldingPosition[] = [];
+        const cash = returns?.cashBalance ?? 0;
+
+        if (returns?.holdingDetails && returns.holdingDetails.length > 0) {
+          pos = returns.holdingDetails
             .filter((h) => h.price != null && h.price > 0)
             .map((h) => ({
               ticker: h.ticker,
@@ -94,19 +97,50 @@ export default function RebalancePage() {
               price: h.price!,
               value: h.value,
             }));
-          setHoldings(pos);
-          setCashBalance(returns.cashBalance ?? 0);
-
-          setDrift(analyzeDrift(pos, tgts, returns.cashBalance ?? 0));
-          setOrders(calculateRebalanceOrders(pos, tgts, returns.cashBalance ?? 0));
         }
+
+        // 보유 종목이 비어있으면(=신규 포트폴리오) 목표 종목 시세를 조회해서
+        // 가상 보유(shares=0, value=0, price=현재가)를 채워 contribute 모드가 작동하게 한다.
+        if (pos.length === 0 && tgts.length > 0) {
+          try {
+            const tickers = tgts
+              .map((t) => t.ticker)
+              .filter((t) => t && t !== "__CASH__")
+              .join(",");
+            if (tickers) {
+              const priceMap = (await fetch(
+                `/api/prices?tickers=${encodeURIComponent(tickers)}`,
+              ).then((r) => r.json())) as Record<
+                string,
+                { close: number; date: string }
+              >;
+              pos = tgts
+                .map((t) => ({
+                  ticker: t.ticker,
+                  name: t.name,
+                  shares: 0,
+                  price: priceMap[t.ticker]?.close ?? 0,
+                  value: 0,
+                }))
+                .filter((h) => h.price > 0);
+            }
+          } catch {
+            /* 시세 조회 실패해도 페이지는 계속 동작 */
+          }
+        }
+
+        setHoldings(pos);
+        setCashBalance(cash);
+        setDrift(analyzeDrift(pos, tgts, cash));
+        setOrders(calculateRebalanceOrders(pos, tgts, cash));
       })
       .finally(() => hideLoading());
   }, [selectedId, showLoading, hideLoading]);
 
   useEffect(() => {
     const amount = Number(contribution) || 0;
-    if (amount > 0 && holdings.length > 0 && targets.length > 0) {
+    // 시세를 가진 보유 (실제 또는 phantom) 가 있으면 contribute 모드 작동
+    if (amount > 0 && targets.length > 0 && holdings.length > 0) {
       setContributionOrders(
         calculateContributionAllocation(holdings, targets, cashBalance, amount),
       );
@@ -114,6 +148,17 @@ export default function RebalancePage() {
       setContributionOrders([]);
     }
   }, [contribution, holdings, targets, cashBalance]);
+
+  // 신규 포트폴리오(보유 0 + 시세만 있음)면 자동으로 contribute 모드로
+  useEffect(() => {
+    if (
+      targets.length > 0 &&
+      holdings.length > 0 &&
+      holdings.every((h) => h.shares === 0)
+    ) {
+      queueMicrotask(() => setMode("contribute"));
+    }
+  }, [targets.length, holdings]);
 
   if (!portfolios) return null;
 
@@ -129,7 +174,10 @@ export default function RebalancePage() {
   }
 
   const totalValue = holdings.reduce((s, h) => s + h.value, 0) + cashBalance;
-  const hasData = targets.length > 0 && totalValue > 0;
+  // 보유가 0이어도 시세가 있는 phantom holdings가 있으면 contribute 모드는 가능
+  const hasPrices = holdings.some((h) => h.price > 0);
+  const isFreshPortfolio = totalValue === 0 && hasPrices;
+  const hasData = targets.length > 0 && (totalValue > 0 || hasPrices);
   const activeOrders = mode === "contribute" ? contributionOrders : orders;
   const totalTradeAmount = activeOrders.reduce((s, o) => s + o.amount, 0);
 
@@ -160,6 +208,19 @@ export default function RebalancePage() {
 
       {selectedId && hasData && (
         <>
+          {isFreshPortfolio && (
+            <Card tone="primary" padding="md" radius="lg">
+              <Text size="body-sm">
+                <strong className="text-foreground-strong">
+                  새 포트폴리오를 시작하셨네요.
+                </strong>{" "}
+                아래 *월 적립 배분*에 이번 달 투자 금액을 입력하면, 어느 종목 몇
+                주를 살지 바로 알려드려요. 매매를 마친 후 보유 수량을 입력하시면
+                전체 리밸런싱도 함께 계산해드릴게요.
+              </Text>
+            </Card>
+          )}
+
           <div className="flex gap-2">
             <ModeButton
               active={mode === "rebalance"}

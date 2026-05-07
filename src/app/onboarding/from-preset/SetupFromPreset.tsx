@@ -117,10 +117,7 @@ export function SetupFromPreset() {
       } catch {
         /* noop */
       }
-      const data = (await res.json()) as { portfolioId?: string };
-      router.push(
-        data.portfolioId ? `/portfolios/${data.portfolioId}` : "/dashboard",
-      );
+      router.push("/rebalance");
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했어요.");
       setSubmitting(false);

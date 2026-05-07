@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { eq, and } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import {
   portfolios,
   instruments,
   targetAllocations,
   accounts,
+  prices,
 } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
+import { fetchPricesForTickers } from "@/lib/price-fetcher";
 import {
   PORTFOLIO_PRESETS,
   type PresetKey,
@@ -105,12 +108,44 @@ export async function POST(req: NextRequest) {
     })
     .run();
 
+  // 4. 시세 수집 — best-effort. 실패해도 온보딩은 성공.
+  //    리밸런싱 contribute 모드가 첫 화면에서 매매 지시서를 보여주려면 필요.
+  const tickers = Object.keys(preset.weights)
+    .filter((k) => preset.weights[k as AssetCategoryKey] > 0)
+    .map((k) => CATEGORY_DEFAULT_TICKER[k as AssetCategoryKey].ticker);
+  let pricesSeeded = 0;
+  try {
+    const fetched = await fetchPricesForTickers(tickers);
+    for (const p of fetched) {
+      const existing = await db
+        .select()
+        .from(prices)
+        .where(and(eq(prices.ticker, p.ticker), eq(prices.date, p.date)))
+        .get();
+      if (!existing) {
+        await db
+          .insert(prices)
+          .values({
+            id: generateId(),
+            ticker: p.ticker,
+            date: p.date,
+            close: p.close,
+          })
+          .run();
+        pricesSeeded += 1;
+      }
+    }
+  } catch {
+    /* NAVER API 장애 등 — 건너뜀. 사용자는 후속에 재시도 가능. */
+  }
+
   return NextResponse.json(
     {
       portfolioId,
       accountId,
       presetKey,
       portfolioName,
+      pricesSeeded,
     },
     { status: 201 },
   );
