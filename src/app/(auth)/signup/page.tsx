@@ -37,7 +37,13 @@ export default function SignupPage() {
     });
 
     if (res.ok) {
-      router.push("/dashboard");
+      let presetSaved = false;
+      try {
+        presetSaved = !!localStorage.getItem("dotori-quiz-preset");
+      } catch {
+        /* localStorage 접근 실패 시 dashboard로 */
+      }
+      router.push(presetSaved ? "/onboarding/from-preset" : "/dashboard");
       router.refresh();
     } else {
       const data = await res.json();

@@ -237,6 +237,16 @@ interface ResultPanelProps {
   onBack: () => void;
 }
 
+const QUIZ_STORAGE_KEY = "dotori-quiz-preset";
+
+function savePreset(key: PresetKey) {
+  try {
+    localStorage.setItem(QUIZ_STORAGE_KEY, key);
+  } catch {
+    /* localStorage 접근 실패 시 무시 — 회원가입 후 진단 다시 가능 */
+  }
+}
+
 function ResultPanel({
   primary,
   secondary,
@@ -266,11 +276,35 @@ function ResultPanel({
 
       <PresetCard preset={primary} highlighted />
 
+      <div className="-mt-2">
+        <Button
+          href="/signup"
+          variant="primary"
+          size="md"
+          fullWidth
+          onClick={() => savePreset(primary.key)}
+          iconRight={<ArrowRight className="w-4 h-4" />}
+        >
+          {primary.name}으로 시작하기
+        </Button>
+      </div>
+
       <div>
         <Text size="label" tone="muted" className="mb-3">
           이런 선택지도 잘 맞아요
         </Text>
         <PresetCard preset={secondary} />
+        <div className="mt-3">
+          <Button
+            href="/signup"
+            variant="outline"
+            size="md"
+            fullWidth
+            onClick={() => savePreset(secondary.key)}
+          >
+            {secondary.name}으로 시작하기
+          </Button>
+        </div>
       </div>
 
       <Card padding="md" radius="xl" tone="muted">
@@ -291,27 +325,16 @@ function ResultPanel({
         )}
       </Card>
 
-      <Card padding="lg" radius="xl">
-        <Heading as="h3" level="title-lg">
-          이걸로 시작해볼까요?
-        </Heading>
-        <Text size="body" tone="muted" className="mt-2">
+      <Card padding="lg" radius="xl" tone="muted">
+        <Text size="body-sm" tone="muted">
           도토리는 매달 *어느 계좌에 어느 종목 몇 주*까지 정리해드려요. 매매는
           증권사 앱에서, 매달 5분이면 끝나요.
         </Text>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Button
-            href="/signup"
-            variant="primary"
-            size="lg"
-            iconRight={<ArrowRight className="w-4 h-4" />}
-          >
-            도토리에서 시작하기
-          </Button>
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button
             onClick={onBack}
             variant="ghost"
-            size="lg"
+            size="sm"
             iconLeft={<ArrowLeft className="w-4 h-4" />}
           >
             이전 답변 수정
@@ -319,7 +342,7 @@ function ResultPanel({
           <Button
             onClick={onReset}
             variant="ghost"
-            size="lg"
+            size="sm"
             iconLeft={<RefreshCw className="w-4 h-4" />}
           >
             처음부터 다시
